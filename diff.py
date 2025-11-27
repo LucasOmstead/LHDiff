@@ -1,5 +1,53 @@
 from typing import List 
 
+def reconstruct_from_trace(old_file_text, new_file_text, trace):
+    edits = []
+    x, y = len(old_file_text), len(new_file_text)
+
+    # backtrack through trace from the last D
+    for D in reversed(range(len(trace))):
+        if D == 0:
+            # At D=0, only snake (matches) from origin, no edit operation
+            while x > 0 and y > 0:
+                edits.append(f"{x-1}:{y-1}")
+                x -= 1
+                y -= 1
+            break
+        
+        # V is the state BEFORE this edit (at D-1)
+        V = trace[D - 1]
+        k = x - y
+
+        # determine predecessor diagonal
+        if k == -D or (k != D and V.get(k-1, -1) < V.get(k+1, -1)):
+            k_prev = k + 1
+            x_prev = V.get(k_prev, 0)
+            y_prev = x_prev - k_prev
+            op = "insert"
+        else:
+            k_prev = k - 1
+            x_prev = V.get(k_prev, 0)
+            y_prev = x_prev - k_prev
+            op = "delete"
+
+        # snake backwards (matches)
+        while x > x_prev and y > y_prev:
+            # each diagonal match adds "line_file_1:line_file_2"
+            edits.append(f"{x-1}:{y-1}")
+            x -= 1
+            y -= 1
+
+        # add the edit that changed D
+        if op == "insert":
+            y -= 1
+            edits.append(f"{y}+")
+        elif op == "delete":
+            x -= 1
+            edits.append(f"{x}-")
+
+    edits.reverse()
+    return edits
+
 def get_diff(old_file_text: List[List[str]], new_file_text: List[List[str]]):
     mapping = []
     max_diffs = len(old_file_text) + len(new_file_text)
@@ -31,5 +79,3 @@ def get_diff(old_file_text: List[List[str]], new_file_text: List[List[str]]):
                 return reconstruct_from_trace(old_file_text, new_file_text, trace)
         trace.append(V.copy())
         frontier = V
-
-
