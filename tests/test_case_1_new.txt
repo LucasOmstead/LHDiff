@@ -1,0 +1,12 @@
+def calculate(x, y):
+    result = x * y  # Changed from addition
+    return result
+
+def helper():
+    print("Helper function")
+    return None
+
+def main():
+    print("Hello World")  # Updated message
+    return 0
+

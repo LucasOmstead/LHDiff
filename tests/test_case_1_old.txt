@@ -1,0 +1,8 @@
+def calculate(x, y):
+    result = x + y
+    return result
+
+def main():
+    print("Hello")
+    return 0
+
