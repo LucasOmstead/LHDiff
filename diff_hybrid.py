@@ -37,24 +37,26 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     exact_diff = get_diff_exact(old_file_text, new_file_text)
     
     # Extract exact matches and track which lines are matched
-    exact_matches = {}  # old_idx -> new_idx (0-based)
+    # Note: Internal processing uses 0-based indices, output will be 1-based
+    exact_matches = {}  # old_idx -> new_idx (0-based internally)
     old_matched = set()
     new_matched = set()
     
     for op in exact_diff:
         if ':' in op:
-            # Exact match: 'x:y'
+            # Exact match: 'x:y' (now 1-based from diff.py)
             old_idx, new_idx = map(int, op.split(':'))
-            exact_matches[old_idx] = new_idx
-            old_matched.add(old_idx)
-            new_matched.add(new_idx)
+            # Convert from 1-based to 0-based for internal processing
+            exact_matches[old_idx - 1] = new_idx - 1
+            old_matched.add(old_idx - 1)  # Convert to 0-based
+            new_matched.add(new_idx - 1)  # Convert to 0-based
         elif op.endswith('-'):
-            # Deletion: 'x-' (will be handled later if not matched by similarity)
-            old_idx = int(op[:-1])
+            # Deletion: 'x-' (now 1-based from diff.py, will be handled later)
+            old_idx = int(op[:-1]) - 1  # Convert to 0-based
             # Don't mark as matched yet - might be similar to something
         elif op.endswith('+'):
-            # Insertion: 'x+' (will be handled later if not matched by similarity)
-            new_idx = int(op[:-1])
+            # Insertion: 'x+' (now 1-based from diff.py, will be handled later)
+            new_idx = int(op[:-1]) - 1  # Convert to 0-based
             # Don't mark as matched yet - might be similar to something
     
     # Step 2: Use similarity matching for unmatched lines (if enabled)
@@ -86,24 +88,24 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     # Step 3: Build final result combining exact and similarity matches
     result = []
     
-    # Process all old lines in order
+    # Process all old lines in order (convert to 1-based for output)
     for old_idx in range(len(old_lines)):
         if old_idx in exact_matches:
-            # Exact match
+            # Exact match (1-based indexing)
             new_idx = exact_matches[old_idx]
-            result.append(f"{old_idx}:{new_idx}")
+            result.append(f"{old_idx+1}:{new_idx+1}")
         elif old_idx in similarity_matches:
-            # Similarity match
+            # Similarity match (1-based indexing)
             new_idx = similarity_matches[old_idx]
-            result.append(f"{old_idx}~{new_idx}")
+            result.append(f"{old_idx+1}~{new_idx+1}")
         elif old_idx not in old_matched:
-            # Pure deletion
-            result.append(f"{old_idx}-")
+            # Pure deletion (1-based indexing)
+            result.append(f"{old_idx+1}-")
     
-    # Add pure insertions
+    # Add pure insertions (1-based indexing)
     for new_idx in range(len(new_lines)):
         if new_idx not in new_matched:
-            result.append(f"{new_idx}+")
+            result.append(f"{new_idx+1}+")
     
     return result
 
