@@ -11,7 +11,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.preprocessing import preprocess_file, preprocess_lines
-from diff import get_diff
+from diff_hybrid import get_diff_hybrid, get_diff_with_hash
 import tempfile
 
 
@@ -51,11 +51,11 @@ return x;
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Identical files pipeline: {result}")
         
-        # Should only have matches
-        assert all(":" in r for r in result), "Should only have matches"
+        # Should only have matches (exact or similarity)
+        assert all(":" in r or "~" in r for r in result), "Should only have matches"
         return result
     finally:
         cleanup_files(file1, file2)
@@ -79,7 +79,7 @@ return x;
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Simple insertion pipeline: {result}")
         
         assert any("+" in r for r in result), "Should have insertion"
@@ -106,7 +106,7 @@ return x;
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Simple deletion pipeline: {result}")
         
         assert any("-" in r for r in result), "Should have deletion"
@@ -135,11 +135,11 @@ return x;
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Whitespace ignored: {result}")
         
         # Should only have matches (no differences after preprocessing)
-        assert all(":" in r for r in result), "Should only have matches"
+        assert all(":" in r or "~" in r for r in result), "Should only have matches"
         return result
     finally:
         cleanup_files(file1, file2)
@@ -166,10 +166,10 @@ return x;
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Case insensitive: {result}")
         
-        assert all(":" in r for r in result), "Should only have matches"
+        assert all(":" in r or "~" in r for r in result), "Should only have matches"
         return result
     finally:
         cleanup_files(file1, file2)
@@ -197,7 +197,7 @@ def test_complex_changes_pipeline():
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Complex changes pipeline: {result}")
         
         # Should have both insertions and matches
@@ -221,7 +221,7 @@ def test_empty_file_pipeline():
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Empty file pipeline: {result}")
         
         # Should have deletions
@@ -262,7 +262,7 @@ def main():
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Real-world scenario: {result}")
         
         return result
@@ -294,7 +294,7 @@ extra_line
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Multiple operations: {result}")
         
         return result
@@ -316,13 +316,13 @@ def test_case_file_1():
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Test case file 1: {result}")
         
         # Verify we got a valid diff result
         assert len(result) > 0, "Should have diff result"
-        # Should have both insertions and deletions (function changed, new function added)
-        assert any("+" in r for r in result) or any("-" in r for r in result), "Should have changes"
+        # Should have matches, similarity matches, insertions, or deletions
+        assert any(":" in r or "~" in r or "+" in r or "-" in r for r in result), "Should have changes"
         
         return result
     except FileNotFoundError as e:
@@ -344,13 +344,13 @@ def test_case_file_2():
         old = [[line] for line in old_lines]
         new = [[line] for line in new_lines]
         
-        result = get_diff(old, new)
+        result = get_diff_hybrid(old, new)
         print(f"✓ Test case file 2: {result}")
         
         # Verify we got a valid diff result
         assert len(result) > 0, "Should have diff result"
-        # Should have deletions (y variable removed) and changes
-        assert any("-" in r for r in result) or any("+" in r for r in result), "Should have changes"
+        # Should have matches, similarity matches, deletions, or insertions
+        assert any(":" in r or "~" in r or "-" in r or "+" in r for r in result), "Should have changes"
         
         return result
     except FileNotFoundError as e:

@@ -1,23 +1,28 @@
 # LHDiff
 
-A line-based diff tool that uses the Myers diff algorithm to compute differences between two files. The tool includes preprocessing capabilities to normalize source code before comparison, making it robust to whitespace, case, and comment differences.
+A hybrid line-based diff tool that combines the Myers diff algorithm (exact matching) with similarity-based matching to compute differences between two files. The tool includes preprocessing capabilities to normalize source code before comparison, making it robust to whitespace, case, and comment differences.
 
 ## Features
 
-- **Myers Diff Algorithm**: Efficient O(ND) algorithm for computing the shortest edit script between two files
+- **Hybrid Diff Algorithm**: 
+  - **Myers Algorithm**: Efficient O(ND) algorithm for exact line matching
+  - **Similarity Matching**: Fuzzy matching using Levenshtein distance and cosine similarity for modified lines
+  - **Two-Pass Approach**: Exact matches first, then similarity matching for remaining lines
 - **Code Normalization**: Preprocessing functions that normalize source code by:
   - Stripping whitespace and normalizing tabs
   - Converting to lowercase
   - Removing inline comments (`//` and `#`)
   - Normalizing operator spacing
   - Collapsing multiple spaces
+- **Hash Support**: Optional MD5 hashing of diff results for verification and identification
 - **Comprehensive Testing**: Full test suite covering edge cases, normal operations, and integration scenarios
 
 ## Project Structure
 
 ```
 LHDiff/
-├── diff.py                 # Myers diff algorithm implementation
+├── diff.py                 # Myers diff algorithm (exact matching)
+├── diff_hybrid.py           # Hybrid diff (exact + similarity matching)
 ├── app.py                  # Main application (to be implemented)
 ├── run_tests.py            # Test runner for all test suites
 ├── README.md               # Project documentation
@@ -25,7 +30,7 @@ LHDiff/
 ├── src/                   # Source package
 │   ├── __init__.py        # Package initialization
 │   ├── preprocessing.py   # Code normalization functions
-│   └── matcher.py         # (Reserved for future use)
+│   └── matcher.py         # Similarity-based line matching
 └── tests/                 # Test suite
     ├── __init__.py        # Test package initialization
     ├── test_integration.py    # Full pipeline tests using test case files
@@ -43,27 +48,42 @@ No external dependencies required - uses only Python standard library.
 
 ## Usage
 
-### Basic Diff Algorithm
+### Hybrid Diff Algorithm (Recommended)
 
 ```python
-from diff import get_diff
+from diff_hybrid import get_diff_hybrid, get_diff_with_hash
 
 # Files are represented as List[List[str]]
 # Each element is a list (can represent a line or tokens)
 old_file = [["line1"], ["line2"], ["line3"]]
-new_file = [["line1"], ["line2"], ["line3"], ["line4"]]
+new_file = [["line1"], ["modified_line2"], ["line3"], ["line4"]]
 
-# Get the diff
-result = get_diff(old_file, new_file)
-# Result: ['0:0', '1:1', '2:2', '3+']
+# Get the diff with hybrid matching
+result = get_diff_hybrid(old_file, new_file)
+# Result: ['0:0', '1~1', '2:2', '3+']
+
+# Get diff with hash
+result_with_hash = get_diff_with_hash(old_file, new_file)
+# Result: {'diff': ['0:0', '1~1', '2:2', '3+'], 'hash': 'a3f5b2c1...'}
 ```
 
 ### Diff Output Format
 
-The diff algorithm returns a list of edit operations:
-- `"x:y"` - Match: line `x` in old file corresponds to line `y` in new file
-- `"x+"` - Insertion: line `x` was inserted in the new file
-- `"x-"` - Deletion: line `x` was deleted from the old file
+The hybrid diff algorithm returns a list of edit operations:
+- `"x:y"` - **Exact match**: line `x` in old file exactly matches line `y` in new file
+- `"x~y"` - **Similarity match**: line `x` in old file is similar to line `y` in new file (modified but similar)
+- `"x+"` - **Insertion**: line `x` was inserted in the new file
+- `"x-"` - **Deletion**: line `x` was deleted from the old file
+
+### Basic Diff Algorithm (Exact Matching Only)
+
+```python
+from diff import get_diff
+
+# Uses only Myers algorithm for exact matching
+result = get_diff(old_file, new_file)
+# Result: ['0:0', '1-', '1+', '2:2', '3+']  # Modified lines shown as deletion + insertion
+```
 
 ### Preprocessing
 
@@ -86,7 +106,7 @@ normalized_lines = preprocess_file("path/to/file.py")
 
 ```python
 from src.preprocessing import preprocess_file
-from diff import get_diff
+from diff_hybrid import get_diff_hybrid, get_diff_with_hash
 
 # Preprocess both files
 old_lines = preprocess_file("old_file.py")
@@ -96,9 +116,27 @@ new_lines = preprocess_file("new_file.py")
 old = [[line] for line in old_lines]
 new = [[line] for line in new_lines]
 
-# Compute diff
-diff = get_diff(old, new)
+# Compute hybrid diff (exact + similarity matching)
+diff = get_diff_hybrid(old, new)
 print(diff)
+# Example: ['0:0', '1~1', '2:2', '3+']
+
+# Or get diff with hash for verification
+result = get_diff_with_hash(old, new)
+print(f"Diff: {result['diff']}")
+print(f"Hash: {result['hash']}")
+```
+
+### Similarity Threshold
+
+You can adjust the similarity threshold for fuzzy matching:
+
+```python
+# Lower threshold = more permissive matching (default: 0.6)
+result = get_diff_hybrid(old, new, similarity_threshold=0.5)
+
+# Disable similarity matching (use only exact matching)
+result = get_diff_hybrid(old, new, use_similarity=False)
 ```
 
 ## Testing
@@ -139,11 +177,29 @@ The test suite uses two test case file pairs:
 
 ## Algorithm Details
 
-The diff algorithm implements the **Myers diff algorithm**, which:
-- Finds the shortest edit script (minimum number of insertions/deletions)
-- Uses dynamic programming with a frontier-based approach
-- Has O(ND) time complexity where N is the sum of file lengths and D is the edit distance
-- Tracks diagonal paths in the edit graph to find optimal matches
+### Hybrid Approach
+
+The diff tool uses a **two-pass hybrid approach**:
+
+1. **First Pass - Exact Matching (Myers Algorithm)**:
+   - Finds exact line matches using the Myers diff algorithm
+   - Efficient O(ND) time complexity
+   - Uses dynamic programming with a frontier-based approach
+   - Tracks diagonal paths in the edit graph to find optimal matches
+
+2. **Second Pass - Similarity Matching**:
+   - Processes unmatched lines from the first pass
+   - Uses **Levenshtein distance** for character-level similarity
+   - Uses **cosine similarity** for context-based matching (surrounding lines)
+   - Combines both metrics with weighted scoring (default: 60% content, 40% context)
+   - Only matches lines above a similarity threshold (default: 0.6)
+
+### Benefits
+
+- **More informative**: Modified lines shown as `x~y` instead of `x-` + `x+`
+- **Better matching**: Handles moved/refactored code better
+- **Backward compatible**: Can disable similarity matching to use only exact matching
+- **Hash support**: Optional MD5 hashing for diff result verification
 
 ## Development
 
