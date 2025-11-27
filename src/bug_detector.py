@@ -18,6 +18,7 @@ class BugDetector:
             "repair", "correct", "amend", "rectify"
         ]  #common words in bug fixes
         
+        #conventional commit format prefixes that indicate bug fixes
         self.conventional_prefixes = [
             "fix:", "fix(", "hotfix:", "hotfix(", 
             "bugfix:", "bugfix(", "perf:", "perf(",
@@ -27,6 +28,7 @@ class BugDetector:
         #  convert to lowercase so we don't miss anything due to capitalization
         text = message.lower()  #make everything lowercase for easier matching
         
+        #check if message starts with conventional commit prefix
         for prefix in self.conventional_prefixes:
             if text.startswith(prefix):
                 return True
@@ -38,6 +40,7 @@ class BugDetector:
         # also check for issue numbers that are usually in bug fix commits
         if re.search(r"#\d+", text):  #regex to find issue numbers
             return True
+        #check for action words with issue numbers (fixes #123, resolves 456)
         if re.search(r"(closes|fixes|resolves|fixed|resolved)\s+#?\d+", text):
             return True
         #  if we didn't find any bug indicators, probably not a bug fix
@@ -63,16 +66,12 @@ if __name__ == "__main__":
         "resolves issue with incorrect validation logic",
         "prevent overflow in buffer handling",
         "correct typo causing failure",
-        "chore: update dependencies",
         "docs: add installation instructions",
         "feat: implement new dashboard",
-        "style: format code with prettier",
         "test: add unit tests for validator",
         "refactor: extract helper functions",
-        "fix regression introduced in v2.1",
         "repair broken link in navigation",
         "urgent hotfix for production crash",
-        "security: patch vulnerability"
     ]
     print("testing the bug detector inital:")
     for msg in examples:
