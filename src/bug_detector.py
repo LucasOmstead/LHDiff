@@ -1,5 +1,27 @@
 import re
-#bug detector class to detect if a commit message is a bug fix
+
+def parse_commit_messages(file_path, target_file_name=None):
+    commits = {}
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    entries = content.split('\n\n')
+    for entry in entries:
+        entry = entry.strip()
+        if not entry or ':' not in entry:
+            continue
+        parts = entry.split(':', 1)
+        if len(parts) != 2:
+            continue
+        file_name = parts[0].strip()
+        message = parts[1].strip()
+        if file_name not in commits:
+            commits[file_name] = []
+        commits[file_name].append(message)
+    
+    if target_file_name:
+        return commits.get(target_file_name, [])
+    return commits
 
 class BugDetector:
     def __init__(self):
@@ -47,14 +69,12 @@ class BugDetector:
         return False  #  no bug indicators found
 
 
-#test the bug detector intial 
 if __name__ == "__main__":
     detector = BugDetector()
-    #  some example commit messages to test with
     examples = [
-        "fix crash on login",   # tests for now       
-        "add new feature",           
-        "resolve issue #234",      
+        "fix crash on login",
+        "add new feature",
+        "resolve issue #234",
         "implement ui layout",
         "fix: resolve null pointer exception in user service",
         "fix(auth): prevent memory leak in session handler",
@@ -73,7 +93,45 @@ if __name__ == "__main__":
         "repair broken link in navigation",
         "urgent hotfix for production crash",
     ]
-    print("testing the bug detector inital:")
+    print("Testing BugDetector:")
     for msg in examples:
         result = detector.is_bug_fix(msg)
-        print(f"'{msg}' : is a bug fix: {result}")
+        print(f"'{msg}' : {result}")
+    
+    print("\n" + "="*60)
+    print("Testing parse_commit_messages:")
+    test_data = """auth:
+initial authentication module
+
+auth:
+add login functionality
+
+auth:
+fix: resolve null pointer in login
+
+user:
+create user model
+
+user:
+add user validation
+
+auth:
+refactor authentication flow
+
+auth:
+hotfix: critical security issue in token generation"""
+    
+    with open("test_commits.txt", "w") as f:
+        f.write(test_data)
+    
+    all_commits = parse_commit_messages("test_commits.txt")
+    print(f"\nAll commits: {all_commits}")
+    
+    auth_commits = parse_commit_messages("test_commits.txt", "auth")
+    print(f"\nauth commits: {auth_commits}")
+    
+    user_commits = parse_commit_messages("test_commits.txt", "user")
+    print(f"\nuser commits: {user_commits}")
+    
+    import os
+    os.remove("test_commits.txt")
