@@ -21,7 +21,7 @@ from collections import Counter
 # --------------------------
 
 def levenshtein(a: str, b: str) -> int:
-    """Compute Levenshtein edit distance between two strings."""
+    """Compute Levenshtein edit distance between two strings using 2D DP."""
     if a == b:
         return 0
     if len(a) == 0:
@@ -29,22 +29,28 @@ def levenshtein(a: str, b: str) -> int:
     if len(b) == 0:
         return len(a)
 
-    # DP table with only two rows
-    prev = list(range(len(b) + 1))
-    curr = [0] * (len(b) + 1)
-
-    for i, ca in enumerate(a, start=1):
-        curr[0] = i
-        for j, cb in enumerate(b, start=1):
-            cost = 0 if ca == cb else 1
-            curr[j] = min(
-                prev[j] + 1,       # deletion
-                curr[j - 1] + 1,   # insertion
-                prev[j - 1] + cost # substitution
+    m, n = len(a), len(b)
+    
+    # 2D DP table
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    # Base cases: transforming empty string to/from prefix
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+    
+    # Fill the table
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            dp[i][j] = min(
+                dp[i - 1][j] + 1,       # deletion
+                dp[i][j - 1] + 1,       # insertion
+                dp[i - 1][j - 1] + cost # substitution
             )
-        prev, curr = curr, prev
-
-    return prev[len(b)]
+    
+    return dp[m][n]
 
 
 def normalized_levenshtein(a: str, b: str) -> float:
@@ -142,7 +148,7 @@ def match_lines(old_lines, new_lines, context_window=4,
     opcodes = sm.get_opcodes()
 
     unmatched_blocks = []  # store (old_range, new_range) for non-'equal' blocks
-
+    
     # 1) First pass: take 'equal' blocks as exact matches
     for tag, i1, i2, j1, j2 in opcodes:
         if tag == 'equal':
