@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # runs the full diff algorithm pipeline and spits out a txt with line mappings
 # compares old vs new versions of files and shows whats changed
 
@@ -7,18 +6,9 @@ import os  # file operations
 import traceback  # for printing stack traces when things break
 
 # need to add tests folder to path so imports work properly
-=======
-# main entry point for our program implemenst full algorithm from start to finish and generates  a .txt file showing line mappings as well as what each mappingmenas
-
-import sys
-import os
-import traceback
-
->>>>>>> 872b465 (Added PyDriller Script & Generated Mapping)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'tests')))
 
 def main():
-<<<<<<< HEAD
     # returns 0 if everything works, 1 if something breaks
     try:
         # run integration tests first before doing anything else
@@ -37,31 +27,12 @@ def main():
             # dump everything to output.txt
             with open("output.txt", "w") as f:
                 # legend so people know what the symbols mean
-=======
-
-    try:
-        import test_integration
-        success = test_integration.run_test_case_files()
-        
-        if success:
-            print("PASSED: Test case files")
-
-            import glob
-            from src.preprocessing import preprocess_file
-            from diff_hybrid import get_diff_hybrid
-            
-            test_dir = "tests"
-            old_files = sorted(glob.glob(f"{test_dir}/test_case_*_old.*"))
-            
-            with open("output.txt", "w") as f:
->>>>>>> 872b465 (Added PyDriller Script & Generated Mapping)
                 f.write("'x:y' = exact match (line x in old matches line y in new)\n")
                 f.write("'x~y' = similarity match (line x in old is similar to line y in new)\n")
                 f.write("'x-' = deletion (line x deleted from old)\n")
                 f.write("'x+' = insertion (line x inserted in new)\n")
                 f.write("\n")
                 
-<<<<<<< HEAD
                 # go through each test case pair
                 for i, old_file in enumerate(old_files, 1):
                     # figure out the matching new file by swapping the suffix
@@ -82,36 +53,17 @@ def main():
                         # run the diff and get back the mapping
                         result = get_diff_hybrid(old, new)
                         # write results for this test case
-=======
-                for i, old_file in enumerate(old_files, 1):
-                    new_file = old_file.replace("_old.", "_new.")
-                    
-                    if os.path.exists(new_file):
-                        old_lines = preprocess_file(old_file)
-                        new_lines = preprocess_file(new_file)
-                        old = [[line] for line in old_lines]
-                        new = [[line] for line in new_lines]                
-                        result = get_diff_hybrid(old, new)                  
->>>>>>> 872b465 (Added PyDriller Script & Generated Mapping)
                         f.write(f"Test case {i}:\n")
                         f.write(f"{result}\n")
                         f.write("\n")
 
             print("Generated: output.txt")
-<<<<<<< HEAD
             return 0  # success
         else:
             # tests failed so dont bother running the rest
             print("FAILED: Test case files")
             return 1
     # something went wrong with imports
-=======
-            return 0
-        else:
-            print("FAILED: Test case files")
-
-            
->>>>>>> 872b465 (Added PyDriller Script & Generated Mapping)
     except ImportError as e:
         print(f"ERROR: Could not import test_integration: {e}")
         traceback.print_exc()  # print full stack trace for debugging
@@ -122,9 +74,6 @@ def main():
         traceback.print_exc()
         return 1
 
-<<<<<<< HEAD
 # only run if this file is executed directly, not imported
-=======
->>>>>>> 872b465 (Added PyDriller Script & Generated Mapping)
 if __name__ == "__main__":
     sys.exit(main())
