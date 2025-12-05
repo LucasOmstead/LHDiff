@@ -12,6 +12,8 @@ Outputs results to output.txt for use by generate_maps.py
 import sys
 import os
 import traceback
+import re
+from collections import defaultdict
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -19,26 +21,105 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 OUTPUT_FILE = "output.txt"
 
 
+def find_all_test_cases(test_cases_dir):
+    """
+    Find all test case pairs in the test_cases directory.
+    Returns a dict mapping test case number to (old_path, new_path, extension).
+    """
+    test_cases = {}
+    
+    if not os.path.exists(test_cases_dir):
+        return test_cases
+    
+    # Group files by test case number
+    old_files = defaultdict(dict)  # {case_num: {ext: path}}
+    new_files = defaultdict(dict)   # {case_num: {ext: path}}
+    
+    for filename in os.listdir(test_cases_dir):
+        # Match pattern: test_case_N_old.ext or test_case_N_new.ext
+        old_match = re.match(r'test_case_(\d+)_old\.(.+)', filename)
+        new_match = re.match(r'test_case_(\d+)_new\.(.+)', filename)
+        
+        if old_match:
+            case_num = int(old_match.group(1))
+            ext = old_match.group(2)
+            old_files[case_num][ext] = os.path.join(test_cases_dir, filename)
+        elif new_match:
+            case_num = int(new_match.group(1))
+            ext = new_match.group(2)
+            new_files[case_num][ext] = os.path.join(test_cases_dir, filename)
+    
+    # Match pairs by case number and extension
+    for case_num in sorted(set(old_files.keys()) & set(new_files.keys())):
+        # Try to match by extension
+        for ext in old_files[case_num]:
+            if ext in new_files[case_num]:
+                test_cases[case_num] = (
+                    old_files[case_num][ext],
+                    new_files[case_num][ext],
+                    ext
+                )
+                break
+    
+    return test_cases
+
+
+def run_test_case(old_path, new_path):
+    """
+    Run a single test case and return the diff result.
+    Returns None if there's an error.
+    """
+    try:
+        from src.diff.preprocessing import preprocess_file
+        from src.diff.diff_hybrid import get_diff_hybrid
+        
+        old_lines = preprocess_file(old_path)
+        new_lines = preprocess_file(new_path)
+        
+        old = [[line] for line in old_lines]
+        new = [[line] for line in new_lines]
+        
+        result = get_diff_hybrid(old, new)
+        
+        # Verify we got a valid diff result
+        assert len(result) > 0, "Should have diff result"
+        assert any(":" in r or "~" in r or "+" in r or "-" in r for r in result), "Should have changes"
+        
+        return result
+    except FileNotFoundError as e:
+        print(f"✗ Test case file not found: {e}")
+        return None
+    except Exception as e:
+        print(f"✗ Error processing test case: {e}")
+        return None
+
+
 def main():
     """Run tests using test case files (full pipeline)."""
-    print("=" * 60)
-    print("LHDiff Test Suite - Test Case Files")
-    print("=" * 60)
-    
-    # Open output file for writing
-    output_lines = []
-    
     try:
-        # Import the test_integration module
-        import test_integration
+        print("=" * 60)
+        print("LHDiff Test Suite - All Test Case Files")
+        print("=" * 60)
         
-        # Run only the test case file tests
-        success = test_integration.run_test_case_files()
+        # Get test cases directory
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        test_cases_dir = os.path.join(test_dir, 'test_cases')
         
-        # Collect test results for output.txt
-        # Get results from test_case_file_1 and test_case_file_2
-        result1 = test_integration.test_case_file_1()
-        result2 = test_integration.test_case_file_2()
+        # Find all test case pairs
+        test_cases = find_all_test_cases(test_cases_dir)
+        
+        if not test_cases:
+            print(f"✗ No test case files found in {test_cases_dir}")
+            return 1
+        
+        print(f"Found {len(test_cases)} test case pairs")
+        print("=" * 60)
+        
+        # Prepare output
+        output_lines = []
+        results = {}
+        success_count = 0
+        fail_count = 0
         
         # Write header explaining diff format
         output_lines.append("x:y = exact match (line x in old matches line y in new)")
@@ -51,18 +132,24 @@ def main():
         output_lines.append("")
         output_lines.append("")  # Extra blank line before test cases
         
-        # Write results in format expected by generate_maps.py
-        if result1 is not None:
-            output_lines.append("Test case 1:")
-            output_lines.append("")  # Empty line
-            output_lines.append(str(result1))
-            output_lines.append("")  # Empty line
-        
-        if result2 is not None:
-            output_lines.append("Test case 2:")
-            output_lines.append("")  # Empty line
-            output_lines.append(str(result2))
-            output_lines.append("")  # Empty line
+        # Run all test cases
+        for case_num in sorted(test_cases.keys()):
+            old_path, new_path, ext = test_cases[case_num]
+            print(f"Testing case {case_num} ({ext})...", end=" ")
+            
+            result = run_test_case(old_path, new_path)
+            
+            if result is not None:
+                results[case_num] = result
+                output_lines.append(f"Test case {case_num}:")
+                output_lines.append("")  # Empty line
+                output_lines.append(str(result))
+                output_lines.append("")  # Empty line
+                print(f"✓")
+                success_count += 1
+            else:
+                print(f"✗")
+                fail_count += 1
         
         # Write to output.txt
         output_path = os.path.join(os.path.dirname(__file__), '..', OUTPUT_FILE)
@@ -70,29 +157,22 @@ def main():
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(output_lines))
         
-        print(f"\n✓ Results written to {OUTPUT_FILE}")
-        
         print("\n" + "=" * 60)
         print("Test Summary")
         print("=" * 60)
+        print(f"✓ Passed: {success_count}")
+        print(f"✗ Failed: {fail_count}")
+        print(f"Total: {len(test_cases)} test cases")
+        print(f"\n✓ Results written to {OUTPUT_FILE}")
+        print("=" * 60)
         
-        if success:
-            print("✓ PASSED: Test case files")
-            print("\nTotal: 1/1 test suites passed")
-            print("=" * 60)
+        if fail_count == 0:
             print("🎉 All tests passed!")
             return 0
         else:
-            print("✗ FAILED: Test case files")
-            print("\nTotal: 0/1 test suites passed")
-            print("=" * 60)
             print("❌ Some tests failed")
             return 1
             
-    except ImportError as e:
-        print(f"ERROR: Could not import test_integration: {e}")
-        traceback.print_exc()
-        return 1
     except Exception as e:
         print(f"ERROR: Exception: {e}")
         traceback.print_exc()

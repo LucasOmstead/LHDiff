@@ -5,7 +5,6 @@ import logging
 import os
 import signal
 import sys
-from time import sleep
 
 
 BASE_FOLDER = os.path.abspath(__file__ + "/../../../")
