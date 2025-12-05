@@ -25,7 +25,7 @@ def parse_commit_messages(file_path, target_file_name=None):
 
 class BugDetector:
     def __init__(self):
-        #for now filter for words that are usually in bug fix commits (test for now)
+        #keywords commonly found in bug fix commits
         self.fix_keywords = [
             "fix", "bug", "error", "issue", "patch", "resolve",
             "crash", "fatal", "critical", "urgent", "security", "vulnerability",
@@ -38,35 +38,35 @@ class BugDetector:
             "exception",
             "typo", "spelling",
             "repair", "correct", "amend", "rectify"
-        ]  #common words in bug fixes
+        ]
         
-        #conventional commit format prefixes that indicate bug fixes
+        #conventional commit prefixes for bug fixes
         self.conventional_prefixes = [
             "fix:", "fix(", "hotfix:", "hotfix(", 
             "bugfix:", "bugfix(", "perf:", "perf(",
             "revert:", "revert(", "security:", "security("
         ]
     def is_bug_fix(self, message):
-        #  convert to lowercase so we don't miss anything due to capitalization
-        text = message.lower()  #make everything lowercase for easier matching
+        #lowercase for case-insensitive matching
+        text = message.lower()
         
-        #check if message starts with conventional commit prefix
+        #check conventional commit prefix
         for prefix in self.conventional_prefixes:
             if text.startswith(prefix):
                 return True
         
-        #loop through our bug words and see if any show up in the commit message
+        #check for bug-related keywords
         for word in self.fix_keywords:
-            if word in text:  #  found a bug-related word
+            if word in text:
                 return True
-        # also check for issue numbers that are usually in bug fix commits
-        if re.search(r"#\d+", text):  #regex to find issue numbers
+        #check for issue numbers
+        if re.search(r"#\d+", text):
             return True
-        #check for action words with issue numbers (fixes #123, resolves 456)
+        #check for action words with issue numbers
         if re.search(r"(closes|fixes|resolves|fixed|resolved)\s+#?\d+", text):
             return True
-        #  if we didn't find any bug indicators, probably not a bug fix
-        return False  #  no bug indicators found
+        #no bug indicators found
+        return False
 
 
 if __name__ == "__main__":

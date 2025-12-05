@@ -1,8 +1,6 @@
 """
-commit_history.py
-
-Manages commit history from desc.txt files.
-Parses commits and identifies bug fixes using BugDetector.
+manages commit history from desc.txt files.
+parses commits and identifies bug fixes.
 """
 
 from typing import List, Dict, Optional
@@ -11,47 +9,33 @@ from .bug_detector import BugDetector, parse_commit_messages
 
 
 class CommitHistory:
-    """
-    Manages commit history for a file from desc.txt.
-    
-    Usage:
-        history = CommitHistory("path/to/desc.txt", "auth")
-        commits = history.get_commits()
-        bug_fixes = history.get_bug_fix_commits()
-    """
+    """manages commit history for a file from desc.txt."""
     
     def __init__(self, desc_file_path: str, file_name: str):
-        """
-        Initialize with desc.txt path and target file name.
-        
-        Args:
-            desc_file_path: Path to desc.txt containing commit messages
-            file_name: Name of the file to get commits for (e.g., "auth" for auth_v0.txt)
-        """
+        """initialize with desc.txt path and target file name."""
         self.desc_file_path = desc_file_path
         self.file_name = file_name
         self.bug_detector = BugDetector()
         
-        # Parse commits on initialization
+        #parse commits on initialization
         self._commits: List[CommitInfo] = []
         self._parse_commits()
     
     def _parse_commits(self) -> None:
-        """Parse commits from desc.txt and build CommitInfo objects."""
+        """parse commits from desc.txt and build CommitInfo objects."""
         try:
-            # Use existing parse_commit_messages function
+            #use existing parse_commit_messages function
             messages = parse_commit_messages(self.desc_file_path, self.file_name)
             
             if not messages:
-                # No commits found for this file
+                #no commits found for this file
                 self._commits = []
                 return
             
-            # Build CommitInfo objects
-            # Version 0 = initial state (before any commits)
-            # Version 1 = after first commit, etc.
+            #build CommitInfo objects
+            #version 0 = initial state, version 1 = after first commit
             for i, message in enumerate(messages):
-                version = i + 1  # Commits start at version 1
+                version = i + 1  #commits start at version 1
                 is_bug_fix = self.bug_detector.is_bug_fix(message)
                 
                 commit = CommitInfo(
@@ -68,73 +52,36 @@ class CommitHistory:
             raise InvalidDataFormat(f"Error parsing desc.txt: {e}")
     
     def get_commits(self) -> List[CommitInfo]:
-        """
-        Returns all commits for the file in chronological order.
-        
-        Returns:
-            List of CommitInfo objects, ordered by version (oldest first)
-        """
+        """returns all commits in chronological order."""
         return self._commits.copy()
     
     def get_bug_fix_commits(self) -> List[CommitInfo]:
-        """
-        Returns only commits that are identified as bug fixes.
-        
-        Returns:
-            List of CommitInfo objects that are bug fixes
-        """
+        """returns only bug fix commits."""
         return [c for c in self._commits if c.is_bug_fix]
     
     def get_commit_at_version(self, version: int) -> Optional[CommitInfo]:
-        """
-        Get commit info for a specific version.
-        
-        Args:
-            version: Version number (1-indexed, as version 0 is initial state)
-            
-        Returns:
-            CommitInfo for that version, or None if not found
-        """
+        """get commit info for a specific version."""
         for commit in self._commits:
             if commit.version == version:
                 return commit
         return None
     
     def get_latest_version(self) -> int:
-        """
-        Get the latest version number.
-        
-        Returns:
-            Latest version number, or 0 if no commits
-        """
+        """get the latest version number."""
         if not self._commits:
             return 0
         return self._commits[-1].version
     
     def get_version_count(self) -> int:
-        """
-        Get total number of versions (including v0).
-        
-        Returns:
-            Number of versions (commits + 1 for initial v0)
-        """
-        return len(self._commits) + 1  # +1 for v0
+        """get total number of versions (including v0)."""
+        return len(self._commits) + 1
     
     def has_bug_fixes(self) -> bool:
-        """Check if there are any bug fix commits."""
+        """check if there are any bug fix commits."""
         return any(c.is_bug_fix for c in self._commits)
     
     def get_commits_between(self, start_version: int, end_version: int) -> List[CommitInfo]:
-        """
-        Get commits between two versions (exclusive of start, inclusive of end).
-        
-        Args:
-            start_version: Start version (exclusive)
-            end_version: End version (inclusive)
-            
-        Returns:
-            List of commits in the range
-        """
+        """get commits between two versions (exclusive start, inclusive end)."""
         return [c for c in self._commits if start_version < c.version <= end_version]
     
     def __len__(self) -> int:
@@ -145,7 +92,7 @@ class CommitHistory:
         return f"CommitHistory(file={self.file_name}, commits={len(self._commits)}, bug_fixes={bug_count})"
     
     def summary(self) -> str:
-        """Generate a summary of the commit history."""
+        """generate a summary of the commit history."""
         lines = [
             f"Commit History for '{self.file_name}'",
             f"Total commits: {len(self._commits)}",

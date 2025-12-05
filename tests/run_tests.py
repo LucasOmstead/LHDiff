@@ -1,12 +1,6 @@
 """
-Test runner script to execute tests using test case files.
-
-Run this script to test the full pipeline (preprocessing -> diff):
-    python tests/run_tests.py
-    or
-    python -m tests.run_tests
-
-Outputs results to output.txt for use by generate_maps.py
+test runner for the full pipeline (preprocessing -> diff).
+outputs results to output.txt.
 """
 
 import sys
@@ -15,28 +9,25 @@ import traceback
 import re
 from collections import defaultdict
 
-# Add parent directory to path for imports
+#add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 OUTPUT_FILE = "output.txt"
 
 
 def find_all_test_cases(test_cases_dir):
-    """
-    Find all test case pairs in the test_cases directory.
-    Returns a dict mapping test case number to (old_path, new_path, extension).
-    """
+    """find all test case pairs in test_cases directory."""
     test_cases = {}
     
     if not os.path.exists(test_cases_dir):
         return test_cases
     
-    # Group files by test case number
-    old_files = defaultdict(dict)  # {case_num: {ext: path}}
-    new_files = defaultdict(dict)   # {case_num: {ext: path}}
+    #group files by test case number
+    old_files = defaultdict(dict)  #{case_num: {ext: path}}
+    new_files = defaultdict(dict)   #{case_num: {ext: path}}
     
     for filename in os.listdir(test_cases_dir):
-        # Match pattern: test_case_N_old.ext or test_case_N_new.ext
+        #match pattern: test_case_N_old.ext or test_case_N_new.ext
         old_match = re.match(r'test_case_(\d+)_old\.(.+)', filename)
         new_match = re.match(r'test_case_(\d+)_new\.(.+)', filename)
         
@@ -49,9 +40,9 @@ def find_all_test_cases(test_cases_dir):
             ext = new_match.group(2)
             new_files[case_num][ext] = os.path.join(test_cases_dir, filename)
     
-    # Match pairs by case number and extension
+    #match pairs by case number and extension
     for case_num in sorted(set(old_files.keys()) & set(new_files.keys())):
-        # Try to match by extension
+        #try to match by extension
         for ext in old_files[case_num]:
             if ext in new_files[case_num]:
                 test_cases[case_num] = (
@@ -65,10 +56,7 @@ def find_all_test_cases(test_cases_dir):
 
 
 def run_test_case(old_path, new_path):
-    """
-    Run a single test case and return the diff result.
-    Returns None if there's an error.
-    """
+    """run a single test case and return the diff result."""
     try:
         from src.diff.preprocessing import preprocess_file
         from src.diff.diff_hybrid import get_diff_hybrid
@@ -81,7 +69,7 @@ def run_test_case(old_path, new_path):
         
         result = get_diff_hybrid(old, new)
         
-        # Verify we got a valid diff result
+        #verify we got a valid diff result
         assert len(result) > 0, "Should have diff result"
         assert any(":" in r or "~" in r or "+" in r or "-" in r for r in result), "Should have changes"
         
@@ -95,17 +83,17 @@ def run_test_case(old_path, new_path):
 
 
 def main():
-    """Run tests using test case files (full pipeline)."""
+    """run tests using test case files."""
     try:
         print("=" * 60)
         print("LHDiff Test Suite - All Test Case Files")
         print("=" * 60)
         
-        # Get test cases directory
+        #get test cases directory
         test_dir = os.path.dirname(os.path.abspath(__file__))
         test_cases_dir = os.path.join(test_dir, 'test_cases')
         
-        # Find all test case pairs
+        #find all test case pairs
         test_cases = find_all_test_cases(test_cases_dir)
         
         if not test_cases:
@@ -115,13 +103,13 @@ def main():
         print(f"Found {len(test_cases)} test case pairs")
         print("=" * 60)
         
-        # Prepare output
+        #prepare output
         output_lines = []
         results = {}
         success_count = 0
         fail_count = 0
         
-        # Write header explaining diff format
+        #write header explaining diff format
         output_lines.append("x:y = exact match (line x in old matches line y in new)")
         output_lines.append("")
         output_lines.append("x~y = similarity match (line x in old is similar to line y in new)")
@@ -130,9 +118,9 @@ def main():
         output_lines.append("")
         output_lines.append("x+ = insertion (line x inserted in new)")
         output_lines.append("")
-        output_lines.append("")  # Extra blank line before test cases
+        output_lines.append("")
         
-        # Run all test cases
+        #run all test cases
         for case_num in sorted(test_cases.keys()):
             old_path, new_path, ext = test_cases[case_num]
             print(f"Testing case {case_num} ({ext})...", end=" ")
@@ -142,16 +130,16 @@ def main():
             if result is not None:
                 results[case_num] = result
                 output_lines.append(f"Test case {case_num}:")
-                output_lines.append("")  # Empty line
+                output_lines.append("")
                 output_lines.append(str(result))
-                output_lines.append("")  # Empty line
+                output_lines.append("")
                 print(f"✓")
                 success_count += 1
             else:
                 print(f"✗")
                 fail_count += 1
         
-        # Write to output.txt
+        #write to output.txt
         output_path = os.path.join(os.path.dirname(__file__), '..', OUTPUT_FILE)
         output_path = os.path.abspath(output_path)
         with open(output_path, 'w', encoding='utf-8') as f:

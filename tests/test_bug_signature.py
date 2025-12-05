@@ -1,14 +1,10 @@
-"""
-Test suite for bug_signature.py
-
-Tests bug signature extraction from bug fix diffs.
-"""
+"""test suite for bug_signature.py"""
 
 import sys
 import os
 import unittest
 
-# Add parent directory to path
+#add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.models import FileVersion
@@ -17,10 +13,10 @@ from src.bug_tracking.bug_signature import extract_bug_signature, build_line_map
 
 
 class TestBugSignatureExtraction(unittest.TestCase):
-    """Test extract_bug_signature function."""
+    """test extract_bug_signature function."""
     
     def create_file_version(self, version: int, lines: list) -> FileVersion:
-        """Helper to create a FileVersion."""
+        """helper to create a FileVersion."""
         preprocessed = preprocess_lines(lines)
         return FileVersion(
             version=version,
@@ -104,8 +100,8 @@ class TestBugSignatureExtraction(unittest.TestCase):
         
         signature = extract_bug_signature(before, after)
         
-        # Insertion-only fixes might have empty signature
-        # (no buggy lines, just missing code)
+        #insertion-only fixes might have empty signature
+        #(no buggy lines, just missing code)
         self.assertIsNotNone(signature)
         self.assertIn("insertion", signature.fix_type.lower())
     
@@ -133,7 +129,7 @@ class TestBugSignatureExtraction(unittest.TestCase):
         
         signature = extract_bug_signature(before, after, context_window=2)
         
-        # Should have context before and after
+        #should have context before and after
         self.assertGreater(len(signature.context_before), 0)
         self.assertGreater(len(signature.context_after), 0)
     
@@ -243,7 +239,7 @@ class TestComputeDiffAndMapping(unittest.TestCase):
         
         diff_ops, mapping = compute_diff_and_mapping(before, after)
         
-        # Should have matches, no deletions/insertions
+        #should have matches, no deletions/insertions
         self.assertIsNotNone(diff_ops)
         self.assertIsNotNone(mapping)
 

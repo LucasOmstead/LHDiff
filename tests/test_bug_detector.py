@@ -1,29 +1,25 @@
-"""
-Test suite for bug_detector.py
-
-Tests the BugDetector class for identifying bug fix commits.
-"""
+"""test suite for bug_detector.py"""
 
 import sys
 import os
 import tempfile
 import unittest
 
-# Add parent directory to path
+#add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.bug_tracking.bug_detector import BugDetector, parse_commit_messages
 
 
 class TestBugDetector(unittest.TestCase):
-    """Test BugDetector class."""
+    """test BugDetector class."""
     
     def setUp(self):
-        """Set up test fixtures."""
+        """set up test fixtures."""
         self.detector = BugDetector()
     
     def test_bug_fix_keywords(self):
-        """Test detection of bug fix keywords."""
+        """test detection of bug fix keywords."""
         bug_fix_messages = [
             "fix crash on login",
             "resolve bug in authentication",
@@ -102,29 +98,26 @@ class TestBugDetector(unittest.TestCase):
                 )
     
     def test_case_insensitive(self):
-        """Test that detection is case-insensitive."""
+        """test that detection is case-insensitive."""
         self.assertTrue(self.detector.is_bug_fix("FIX CRASH"))
         self.assertTrue(self.detector.is_bug_fix("Fix Bug"))
         self.assertTrue(self.detector.is_bug_fix("BUGFIX"))
         self.assertTrue(self.detector.is_bug_fix("HotFix"))
     
     def test_edge_cases(self):
-        """Test edge cases."""
-        # Empty message
+        """test edge cases."""
+        #empty message
         self.assertFalse(self.detector.is_bug_fix(""))
         
-        # Note: The detector is keyword-based, so:
-        # - "add bug tracking system" WILL be detected (contains "bug")
-        # - "fix typo" WILL be detected (contains "fix")
-        # This is expected behavior for a keyword-based detector
-        # More sophisticated detection would require context understanding
+        #note: keyword-based detector will match "bug" in "bug tracking"
+        #more sophisticated detection would need context understanding
 
 
 class TestParseCommitMessages(unittest.TestCase):
-    """Test parse_commit_messages function."""
+    """test parse_commit_messages function."""
     
     def test_parse_single_file(self):
-        """Test parsing commits for a single file."""
+        """test parsing commits for a single file."""
         test_data = """auth:
 initial authentication module
 
@@ -206,7 +199,7 @@ another valid entry
         
         try:
             commits = parse_commit_messages(temp_path, "auth")
-            # Should only parse valid entries
+            #should only parse valid entries
             self.assertEqual(len(commits), 2)
         finally:
             os.unlink(temp_path)
