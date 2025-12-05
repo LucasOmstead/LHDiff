@@ -12,9 +12,13 @@
 #   line i in preprocessed old file corresponds to line j in preprocessed new file.
 
 import os
+import sys
 
-from src.preprocessing import preprocess_file
-from src.matcher import match_lines
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.diff.preprocessing import preprocess_file
+from src.diff.matcher import match_lines
 
 
 def load_mapping_file(path):
@@ -125,6 +129,9 @@ def evaluate_dataset(dataset_dir):
 
 
 if __name__ == "__main__":
-    tests_dir = os.path.join("tests")
-    print("Evaluating tests/ ...")
+    # Test cases are in tests/test_cases/
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    tests_dir = os.path.join(project_root, "tests", "test_cases")
+    print(f"Evaluating {tests_dir} ...")
     evaluate_dataset(tests_dir)
