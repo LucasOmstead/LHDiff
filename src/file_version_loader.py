@@ -137,17 +137,19 @@ class FileVersionLoader:
             Sorted list of available version numbers
         """
         versions = []
-        version = 0
         
-        # Check versions starting from 0
-        while True:
-            if self.version_exists(version):
-                versions.append(version)
-                version += 1
-            else:
-                break
+        # Scan directory for all files matching pattern
+        for filename in os.listdir(self.base_path):
+            if filename.startswith(f"{self.file_base_name}_v") and filename.endswith(".txt"):
+                try:
+                    # Extract version number from filename
+                    version_str = filename[len(self.file_base_name) + 2:-4]  # +2 for "_v", -4 for ".txt"
+                    version = int(version_str)
+                    versions.append(version)
+                except ValueError:
+                    continue
         
-        return versions
+        return sorted(versions)
     
     def get_latest_version(self) -> int:
         """
