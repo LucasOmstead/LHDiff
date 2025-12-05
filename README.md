@@ -231,10 +231,4 @@ When adding new features:
 2. Add integration tests if the feature affects the pipeline
 3. Run `python3 run_tests.py` to ensure all tests pass
 
-## License
 
-[Add your license here]
-
-## Contributing
-
-[Add contribution guidelines here]
