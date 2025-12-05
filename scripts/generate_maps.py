@@ -81,10 +81,11 @@ def main():
             for tok in tokens:
                 pair = parse_token(tok)
                 if pair is not None:
+                    # Output is already 1-based, use directly
                     mappings.append(pair)
 
-            # Write test_case_N_map.txt in tests/
-            map_path = os.path.join(TEST_DIR, f"test_case_{case_num}_map.txt")
+            # Write test_case_N_map.txt in tests/test_cases/
+            map_path = os.path.join(TEST_DIR, "test_cases", f"test_case_{case_num}_map.txt")
             with open(map_path, "w", encoding="utf-8") as mf:
                 for (a, b) in mappings:
                     mf.write(f"{a}-{b}\n")

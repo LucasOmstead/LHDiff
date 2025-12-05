@@ -9,7 +9,7 @@ def reconstruct_from_trace(old_file_text, new_file_text, trace):
         if D == 0:
             # At D=0, only snake (matches) from origin, no edit operation
             while x > 0 and y > 0:
-                edits.append(f"{x-1}:{y-1}")
+                edits.append(f"{x}:{y}")
                 x -= 1
                 y -= 1
             break
@@ -32,18 +32,18 @@ def reconstruct_from_trace(old_file_text, new_file_text, trace):
 
         # snake backwards (matches)
         while x > x_prev and y > y_prev:
-            # each diagonal match adds "line_file_1:line_file_2"
-            edits.append(f"{x-1}:{y-1}")
+            # each diagonal match adds "line_file_1:line_file_2" (1-based)
+            edits.append(f"{x}:{y}")
             x -= 1
             y -= 1
 
         # add the edit that changed D
         if op == "insert":
             y -= 1
-            edits.append(f"{y}+")
+            edits.append(f"{y+1}+")
         elif op == "delete":
             x -= 1
-            edits.append(f"{x}-")
+            edits.append(f"{x+1}-")
 
     edits.reverse()
     return edits

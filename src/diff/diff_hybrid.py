@@ -43,18 +43,22 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     
     for op in exact_diff:
         if ':' in op:
-            # Exact match: 'x:y'
+            # Exact match: 'x:y' (1-based from get_diff_exact, convert to 0-based)
             old_idx, new_idx = map(int, op.split(':'))
-            exact_matches[old_idx] = new_idx
-            old_matched.add(old_idx)
-            new_matched.add(new_idx)
+            old_idx_0based = old_idx - 1
+            new_idx_0based = new_idx - 1
+            exact_matches[old_idx_0based] = new_idx_0based
+            old_matched.add(old_idx_0based)
+            new_matched.add(new_idx_0based)
         elif op.endswith('-'):
-            # Deletion: 'x-' (will be handled later if not matched by similarity)
-            old_idx = int(op[:-1])
+            # Deletion: 'x-' (1-based from get_diff_exact, convert to 0-based)
+            old_idx_1based = int(op[:-1])
+            old_idx = old_idx_1based - 1
             # Don't mark as matched yet - might be similar to something
         elif op.endswith('+'):
-            # Insertion: 'x+' (will be handled later if not matched by similarity)
-            new_idx = int(op[:-1])
+            # Insertion: 'x+' (1-based from get_diff_exact, convert to 0-based)
+            new_idx_1based = int(op[:-1])
+            new_idx = new_idx_1based - 1
             # Don't mark as matched yet - might be similar to something
     
     # Step 2: Use similarity matching for unmatched lines (if enabled)
@@ -86,24 +90,24 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     # Step 3: Build final result combining exact and similarity matches
     result = []
     
-    # Process all old lines in order
+    # Process all old lines in order (convert to 1-based for output)
     for old_idx in range(len(old_lines)):
         if old_idx in exact_matches:
-            # Exact match
+            # Exact match (convert to 1-based)
             new_idx = exact_matches[old_idx]
-            result.append(f"{old_idx}:{new_idx}")
+            result.append(f"{old_idx+1}:{new_idx+1}")
         elif old_idx in similarity_matches:
-            # Similarity match
+            # Similarity match (convert to 1-based)
             new_idx = similarity_matches[old_idx]
-            result.append(f"{old_idx}~{new_idx}")
+            result.append(f"{old_idx+1}~{new_idx+1}")
         elif old_idx not in old_matched:
-            # Pure deletion
-            result.append(f"{old_idx}-")
+            # Pure deletion (convert to 1-based)
+            result.append(f"{old_idx+1}-")
     
-    # Add pure insertions
+    # Add pure insertions (convert to 1-based)
     for new_idx in range(len(new_lines)):
         if new_idx not in new_matched:
-            result.append(f"{new_idx}+")
+            result.append(f"{new_idx+1}+")
     
     return result
 
