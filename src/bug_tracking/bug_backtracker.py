@@ -85,7 +85,7 @@ class BugBacktracker:
                 )
                 lineages.append(lineage)
                 if verbose:
-                    print(f"\n⚠️  Trace failed: {e}\n")
+                    print(f"\nWARNING: Trace failed: {e}\n")
         
         return lineages
     
@@ -236,12 +236,12 @@ class BugBacktracker:
         print("="*60)
         
         #bug fix info
-        print(f"🔧 Bug Fix:")
+        print(f"Bug Fix:")
         print(f"   Version: v{lineage.fix_version}")
         print(f"   Commit: {lineage.fix_commit.message}")
         
         #bug introduction info
-        print(f"\n🐛 Bug Introduction:")
+        print(f"\nBug Introduction:")
         if lineage.introduction_version >= 0:
             print(f"   Version: v{lineage.introduction_version}")
             if lineage.introduction_commit:
@@ -254,8 +254,7 @@ class BugBacktracker:
             print(f"   Not found (confidence too low)")
         
         #summary stats
-        print(f"\n📊 Summary:")
-        print(f"   Confidence: {lineage.confidence:.1%}")
+        print(f"\nSummary:")
         print(f"   Commits Between: {lineage.commits_between}")
         print(f"   Trace Complete: {'Yes' if lineage.trace_complete else 'No'}")
         
