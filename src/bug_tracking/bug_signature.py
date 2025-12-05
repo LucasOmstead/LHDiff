@@ -29,13 +29,15 @@ def extract_bug_signature(
     for op in diff_ops:
         if op.endswith('-'):
             #deletion: line was removed (was buggy)
-            line_num = int(op[:-1])
-            buggy_line_numbers.append(line_num)
+            # Note: diff ops use 1-based indexing, convert to 0-based for array access
+            line_num_1based = int(op[:-1])
+            buggy_line_numbers.append(line_num_1based - 1)
             fix_type_counts["deletion"] += 1
         elif '~' in op:
             #modification: line was changed (was buggy)
+            # Note: diff ops use 1-based indexing, convert to 0-based for array access
             old_num, new_num = op.split('~')
-            buggy_line_numbers.append(int(old_num))
+            buggy_line_numbers.append(int(old_num) - 1)
             fix_type_counts["modification"] += 1
         elif op.endswith('+'):
             #insertion: new line added (might be fix for missing code)

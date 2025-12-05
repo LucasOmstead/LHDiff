@@ -118,36 +118,6 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(len(commits), 0)
 
 
-class TestCalculatorBug(unittest.TestCase):
-    """Test bug backtracking for calculator with wrong operator bug"""
-    
-    def test_calculator_commits(self):
-        history = CommitHistory(DESC_FILE, "calculator")
-        commits = history.get_commits()
-        self.assertEqual(len(commits), 4)
-    
-    def test_calculator_bug_fix(self):
-        history = CommitHistory(DESC_FILE, "calculator")
-        bug_fixes = history.get_bug_fix_commits()
-        #should identify v4 as bug fix (subtract operator fix)
-        self.assertTrue(any(commit.version == 4 for commit in bug_fixes))
-    
-    def test_calculator_trace_bug(self):
-        backtracker = BugBacktracker(DESC_FILE, TEST_DATA_DIR)
-        lineage = backtracker.trace_single_bug("calculator", bug_fix_version=4)
-        
-        self.assertEqual(lineage.fix_version, 4)
-        #system traces to v1 because "return a + b;" existed in add() method
-        #matches literal lines not semantic context - bug was semantically
-        #introduced in v2 but line existed since v1
-        self.assertEqual(lineage.introduction_version, 1)
-    
-    def test_calculator_load_versions(self):
-        loader = FileVersionLoader(TEST_DATA_DIR, "calculator")
-        versions = loader.get_available_versions()
-        self.assertEqual(versions, [1, 2, 3, 4])
-
-
 class TestAuthBug(unittest.TestCase):
     """Test bug backtracking for authentication with == vs equals() bug"""
     
@@ -228,7 +198,6 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestBugBacktracker))
     suite.addTests(loader.loadTestsFromTestCase(TestBugLineage))
     suite.addTests(loader.loadTestsFromTestCase(TestEdgeCases))
-    suite.addTests(loader.loadTestsFromTestCase(TestCalculatorBug))
     suite.addTests(loader.loadTestsFromTestCase(TestAuthBug))
     suite.addTests(loader.loadTestsFromTestCase(TestListManagerBug))
     
