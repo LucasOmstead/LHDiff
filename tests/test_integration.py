@@ -306,8 +306,8 @@ def test_case_file_1():
     """Test using test_case_1 files (complex Python function changes)."""
     # Get the directory where this test file is located
     test_dir = os.path.dirname(os.path.abspath(__file__))
-    old_path = os.path.join(test_dir, 'test_case_1_old.txt')
-    new_path = os.path.join(test_dir, 'test_case_1_new.txt')
+    old_path = os.path.join(test_dir, 'test_case_1_old.py')
+    new_path = os.path.join(test_dir, 'test_case_1_new.py')
     
     try:
         old_lines = preprocess_file(old_path)
@@ -334,8 +334,8 @@ def test_case_file_2():
     """Test using test_case_2 files (simple C-style code changes)."""
     # Get the directory where this test file is located
     test_dir = os.path.dirname(os.path.abspath(__file__))
-    old_path = os.path.join(test_dir, 'test_case_2_old.txt')
-    new_path = os.path.join(test_dir, 'test_case_2_new.txt')
+    old_path = os.path.join(test_dir, 'test_case_2_old.py')
+    new_path = os.path.join(test_dir, 'test_case_2_new.py')
     
     try:
         old_lines = preprocess_file(old_path)

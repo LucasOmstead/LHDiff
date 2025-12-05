@@ -1,0 +1,14 @@
+sudo: false
+language: python
+jdk: oraclejdk7
+python: 
+  - "2.7"
+env:
+  - TOX_ENV=py27-cdh
+  - TOX_ENV=py27-hdp
+install:
+  - pip install -rrequirements.txt
+  - pip install tox
+script:
+  - tox --version
+  - python setup.py test --tox-args="-v -e $TOX_ENV"

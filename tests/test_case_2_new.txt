@@ -1,4 +1,0 @@
-int x = 5;
-int z = x * 2;
-return z;
-
