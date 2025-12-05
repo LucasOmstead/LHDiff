@@ -10,8 +10,8 @@ import os
 # Add parent directory to path to import modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.preprocessing import preprocess_file, preprocess_lines
-from diff_hybrid import get_diff_hybrid, get_diff_with_hash
+from src.diff.preprocessing import preprocess_file, preprocess_lines
+from src.diff.diff_hybrid import get_diff_hybrid, get_diff_with_hash
 import tempfile
 
 

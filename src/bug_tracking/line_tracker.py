@@ -6,9 +6,9 @@ Handles the complexity of line numbers changing as code is added/removed.
 """
 
 from typing import List, Optional, Dict
-from .models import FileVersion, LineMapping, LineHistory, BugSignature, BugMatch
+from ..models import FileVersion, LineMapping, LineHistory, BugSignature, BugMatch
 from .bug_signature import compute_diff_and_mapping
-from .matcher import normalized_levenshtein, cosine_similarity, combined_similarity
+from ..diff.matcher import normalized_levenshtein, cosine_similarity, combined_similarity
 
 
 def track_line_backward(

@@ -10,8 +10,8 @@ Returns diff in format:
 """
 
 from typing import List
-from diff import get_diff as get_diff_exact
-from src.matcher import match_lines
+from .diff import get_diff as get_diff_exact
+from .matcher import match_lines
 import hashlib
 
 
@@ -37,26 +37,24 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     exact_diff = get_diff_exact(old_file_text, new_file_text)
     
     # Extract exact matches and track which lines are matched
-    # Note: Internal processing uses 0-based indices, output will be 1-based
-    exact_matches = {}  # old_idx -> new_idx (0-based internally)
+    exact_matches = {}  # old_idx -> new_idx (0-based)
     old_matched = set()
     new_matched = set()
     
     for op in exact_diff:
         if ':' in op:
-            # Exact match: 'x:y' (now 1-based from diff.py)
+            # Exact match: 'x:y'
             old_idx, new_idx = map(int, op.split(':'))
-            # Convert from 1-based to 0-based for internal processing
-            exact_matches[old_idx - 1] = new_idx - 1
-            old_matched.add(old_idx - 1)  # Convert to 0-based
-            new_matched.add(new_idx - 1)  # Convert to 0-based
+            exact_matches[old_idx] = new_idx
+            old_matched.add(old_idx)
+            new_matched.add(new_idx)
         elif op.endswith('-'):
-            # Deletion: 'x-' (now 1-based from diff.py, will be handled later)
-            old_idx = int(op[:-1]) - 1  # Convert to 0-based
+            # Deletion: 'x-' (will be handled later if not matched by similarity)
+            old_idx = int(op[:-1])
             # Don't mark as matched yet - might be similar to something
         elif op.endswith('+'):
-            # Insertion: 'x+' (now 1-based from diff.py, will be handled later)
-            new_idx = int(op[:-1]) - 1  # Convert to 0-based
+            # Insertion: 'x+' (will be handled later if not matched by similarity)
+            new_idx = int(op[:-1])
             # Don't mark as matched yet - might be similar to something
     
     # Step 2: Use similarity matching for unmatched lines (if enabled)
@@ -88,24 +86,24 @@ def get_diff_hybrid(old_file_text: List[List[str]], new_file_text: List[List[str
     # Step 3: Build final result combining exact and similarity matches
     result = []
     
-    # Process all old lines in order (convert to 1-based for output)
+    # Process all old lines in order
     for old_idx in range(len(old_lines)):
         if old_idx in exact_matches:
-            # Exact match (1-based indexing)
+            # Exact match
             new_idx = exact_matches[old_idx]
-            result.append(f"{old_idx+1}:{new_idx+1}")
+            result.append(f"{old_idx}:{new_idx}")
         elif old_idx in similarity_matches:
-            # Similarity match (1-based indexing)
+            # Similarity match
             new_idx = similarity_matches[old_idx]
-            result.append(f"{old_idx+1}~{new_idx+1}")
+            result.append(f"{old_idx}~{new_idx}")
         elif old_idx not in old_matched:
-            # Pure deletion (1-based indexing)
-            result.append(f"{old_idx+1}-")
+            # Pure deletion
+            result.append(f"{old_idx}-")
     
-    # Add pure insertions (1-based indexing)
+    # Add pure insertions
     for new_idx in range(len(new_lines)):
         if new_idx not in new_matched:
-            result.append(f"{new_idx+1}+")
+            result.append(f"{new_idx}+")
     
     return result
 

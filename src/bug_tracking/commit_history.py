@@ -6,7 +6,7 @@ Parses commits and identifies bug fixes using BugDetector.
 """
 
 from typing import List, Dict, Optional
-from .models import CommitInfo, FileVersionNotFound, NoBugFixFound, InvalidDataFormat
+from ..models import CommitInfo, FileVersionNotFound, NoBugFixFound, InvalidDataFormat
 from .bug_detector import BugDetector, parse_commit_messages
 
 

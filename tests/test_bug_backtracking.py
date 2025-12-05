@@ -12,10 +12,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models import CommitInfo, FileVersion, BugSignature, BugLineage, LineMapping
-from src.commit_history import CommitHistory
-from src.file_version_loader import FileVersionLoader
-from src.bug_signature import extract_bug_signature, build_line_mapping
-from src.bug_backtracker import BugBacktracker, backtrack_bug_to_origin
+from src.bug_tracking.commit_history import CommitHistory
+from src.bug_tracking.file_version_loader import FileVersionLoader
+from src.bug_tracking.bug_signature import extract_bug_signature, build_line_mapping
+from src.bug_tracking.bug_backtracker import BugBacktracker, backtrack_bug_to_origin
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "bug_backtracking")

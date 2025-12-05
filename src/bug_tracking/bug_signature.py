@@ -6,16 +6,10 @@ A bug signature represents the "buggy code" that was fixed,
 used to search backward through history.
 """
 
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from typing import List, Tuple, Optional
-from .models import FileVersion, BugSignature, LineMapping
-from .preprocessing import preprocess_lines
-from diff_hybrid import get_diff_hybrid
+from ..models import FileVersion, BugSignature, LineMapping
+from ..diff.preprocessing import preprocess_lines
+from ..diff.diff_hybrid import get_diff_hybrid
 
 
 def extract_bug_signature(

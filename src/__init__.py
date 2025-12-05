@@ -4,19 +4,27 @@ LHDiff source package.
 Contains preprocessing, matching, and bug backtracking utilities for diff computation.
 """
 
-from .preprocessing import preprocess_line, preprocess_lines, preprocess_file
-from .matcher import match_lines, normalized_levenshtein, cosine_similarity
-from .bug_detector import BugDetector, parse_commit_messages
+# Core diff functionality
+from .diff import (
+    preprocess_line, preprocess_lines, preprocess_file,
+    match_lines, normalized_levenshtein, cosine_similarity
+)
+
+# Bug tracking functionality
+from .bug_tracking import (
+    BugDetector, parse_commit_messages,
+    extract_bug_signature, build_line_mapping,
+    BugBacktracker, backtrack_bug_to_origin,
+    CommitHistory, FileVersionLoader,
+    find_bug_in_version, track_line_backward
+)
+
+# Models (shared data structures)
 from .models import (
     CommitInfo, FileVersion, BugSignature, BugLineage, BugMatch,
     LineMapping, LineHistory,
     BugTraceError, FileVersionNotFound, NoBugFixFound, TraceIncomplete
 )
-from .commit_history import CommitHistory
-from .file_version_loader import FileVersionLoader
-from .bug_signature import extract_bug_signature, build_line_mapping
-from .line_tracker import find_bug_in_version, track_line_backward
-from .bug_backtracker import BugBacktracker, backtrack_bug_to_origin
 
 __all__ = [
     # Preprocessing

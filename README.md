@@ -21,17 +21,33 @@ A hybrid line-based diff tool that combines the Myers diff algorithm (exact matc
 
 ```
 LHDiff/
-├── diff.py                 # Myers diff algorithm (exact matching)
-├── diff_hybrid.py           # Hybrid diff (exact + similarity matching)
 ├── app.py                  # Main application (to be implemented)
-├── run_tests.py            # Test runner for all test suites
 ├── README.md               # Project documentation
 ├── .gitignore             # Git ignore rules
 ├── src/                   # Source package
 │   ├── __init__.py        # Package initialization
-│   ├── preprocessing.py   # Code normalization functions
-│   └── matcher.py         # Similarity-based line matching
+│   ├── models.py          # Shared data models
+│   ├── diff/              # Core diff functionality
+│   │   ├── __init__.py
+│   │   ├── diff.py            # Myers diff algorithm (exact matching)
+│   │   ├── diff_hybrid.py     # Hybrid diff (exact + similarity matching)
+│   │   ├── preprocessing.py   # Code normalization functions
+│   │   └── matcher.py         # Similarity-based line matching
+│   └── bug_tracking/      # Bug tracking and backtracking
+│       ├── __init__.py
+│       ├── bug_detector.py      # Bug fix detection in commits
+│       ├── bug_signature.py     # Bug signature extraction
+│       ├── bug_backtracker.py   # Main bug backtracking API
+│       ├── commit_history.py    # Commit history management
+│       ├── file_version_loader.py  # File version loading
+│       └── line_tracker.py       # Line tracking through history
 └── tests/                 # Test suite
+    ├── __init__.py
+    ├── run_tests.py       # Test runner script
+    ├── test_integration.py    # Full pipeline tests
+    ├── test_bug_*.py      # Bug tracking tests
+    └── test_case_*.txt    # Test case files
+```
     ├── __init__.py        # Test package initialization
     ├── test_integration.py    # Full pipeline tests using test case files
     ├── test_case_1_old.txt    # Test case 1 - old version
@@ -51,7 +67,7 @@ No external dependencies required - uses only Python standard library.
 ### Hybrid Diff Algorithm (Recommended)
 
 ```python
-from diff_hybrid import get_diff_hybrid, get_diff_with_hash
+from src.diff import get_diff_hybrid, get_diff_with_hash
 
 # Files are represented as List[List[str]]
 # Each element is a list (can represent a line or tokens)
@@ -78,7 +94,7 @@ The hybrid diff algorithm returns a list of edit operations:
 ### Basic Diff Algorithm (Exact Matching Only)
 
 ```python
-from diff import get_diff
+from src.diff import get_diff
 
 # Uses only Myers algorithm for exact matching
 result = get_diff(old_file, new_file)
@@ -105,8 +121,7 @@ normalized_lines = preprocess_file("path/to/file.py")
 ### Full Pipeline Example
 
 ```python
-from src.preprocessing import preprocess_file
-from diff_hybrid import get_diff_hybrid, get_diff_with_hash
+from src.diff import preprocess_file, get_diff_hybrid, get_diff_with_hash
 
 # Preprocess both files
 old_lines = preprocess_file("old_file.py")

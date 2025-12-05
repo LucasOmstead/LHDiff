@@ -7,8 +7,8 @@ Handles preprocessing and caching of file versions.
 
 import os
 from typing import List, Dict, Optional
-from .models import FileVersion, FileVersionNotFound
-from .preprocessing import preprocess_lines
+from ..models import FileVersion, FileVersionNotFound
+from ..diff.preprocessing import preprocess_lines
 
 
 class FileVersionLoader:

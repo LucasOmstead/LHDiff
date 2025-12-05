@@ -199,6 +199,23 @@ def match_lines(old_lines, new_lines, context_window=4,
     return result
 
 
-# Note: This module is used by diff_hybrid.py for similarity-based matching
-# Run tests via: python3 run_tests.py
+if __name__ == "__main__":
+    # Simple manual test
+    old = [
+        "int count = 5",
+        "int x = count + 1",
+        "return x"
+    ]
+
+    new = [
+        "int count=5",
+        "int y = 10",
+        "int x = count + 1",
+        "return x"
+    ]
+
+    matches = match_lines(old, new)
+    print("Mappings (old-new):")
+    for o, n in matches:
+        print(f"{o}-{n}")
 

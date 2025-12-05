@@ -5,14 +5,8 @@ Main API for bug backtracking feature.
 Traces bugs from their fix commit back to the commit that introduced them.
 """
 
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from typing import List, Dict, Optional
-from .models import (
+from ..models import (
     CommitInfo, FileVersion, BugSignature, BugLineage, BugMatch,
     LineMapping, LineHistory,
     BugTraceError, FileVersionNotFound, NoBugFixFound, TraceIncomplete
