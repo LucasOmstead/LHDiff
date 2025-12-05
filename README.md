@@ -44,16 +44,13 @@ LHDiff/
 └── tests/                 # Test suite
     ├── __init__.py
     ├── run_tests.py       # Test runner script
-    ├── test_integration.py    # Full pipeline tests
     ├── test_bug_*.py      # Bug tracking tests
-    └── test_case_*.txt    # Test case files
-```
-    ├── __init__.py        # Test package initialization
-    ├── test_integration.py    # Full pipeline tests using test case files
-    ├── test_case_1_old.txt    # Test case 1 - old version
-    ├── test_case_1_new.txt    # Test case 1 - new version
-    ├── test_case_2_old.txt    # Test case 2 - old version
-    └── test_case_2_new.txt    # Test case 2 - new version
+    └── test_cases/        # Test case files directory
+        └── test_case_N_*.txt  # Test case files (old/new versions)
+└── scripts/               # Utility scripts
+    ├── check_correctness.py    # Git diff-based correctness checker
+    ├── generate_maps.py        # Generate mapping files from output
+    └── generate_table2_data.py # Generate evaluation table data
 ```
 
 ## Requirements
@@ -76,11 +73,11 @@ new_file = [["line1"], ["modified_line2"], ["line3"], ["line4"]]
 
 # Get the diff with hybrid matching
 result = get_diff_hybrid(old_file, new_file)
-# Result: ['0:0', '1~1', '2:2', '3+']
+# Result: ['1:1', '2~2', '3:3', '4+']
 
 # Get diff with hash
 result_with_hash = get_diff_with_hash(old_file, new_file)
-# Result: {'diff': ['0:0', '1~1', '2:2', '3+'], 'hash': 'a3f5b2c1...'}
+# Result: {'diff': ['1:1', '2~2', '3:3', '4+'], 'hash': 'a3f5b2c1...'}
 ```
 
 ### Diff Output Format
@@ -98,13 +95,13 @@ from src.diff import get_diff
 
 # Uses only Myers algorithm for exact matching
 result = get_diff(old_file, new_file)
-# Result: ['0:0', '1-', '1+', '2:2', '3+']  # Modified lines shown as deletion + insertion
+# Result: ['1:1', '2-', '2+', '3:3', '4+']  # Modified lines shown as deletion + insertion
 ```
 
 ### Preprocessing
 
 ```python
-from src.preprocessing import preprocess_line, preprocess_lines, preprocess_file
+from src.diff.preprocessing import preprocess_line, preprocess_lines, preprocess_file
 
 # Normalize a single line
 normalized = preprocess_line("   int Count = 5;   // comment")
@@ -121,7 +118,8 @@ normalized_lines = preprocess_file("path/to/file.py")
 ### Full Pipeline Example
 
 ```python
-from src.diff import preprocess_file, get_diff_hybrid, get_diff_with_hash
+from src.diff.preprocessing import preprocess_file
+from src.diff import get_diff_hybrid, get_diff_with_hash
 
 # Preprocess both files
 old_lines = preprocess_file("old_file.py")
@@ -134,7 +132,7 @@ new = [[line] for line in new_lines]
 # Compute hybrid diff (exact + similarity matching)
 diff = get_diff_hybrid(old, new)
 print(diff)
-# Example: ['0:0', '1~1', '2:2', '3+']
+# Example: ['1:1', '2~2', '3:3', '4+']
 
 # Or get diff with hash for verification
 result = get_diff_with_hash(old, new)
@@ -156,39 +154,51 @@ result = get_diff_hybrid(old, new, use_similarity=False)
 
 ## Testing
 
-The project uses full pipeline tests that test the complete workflow from file input to diff output.
+The project uses a comprehensive test suite that tests the complete workflow from file input to diff output.
 
 ### Test Suite
 
-**`test_integration.py`**: Full pipeline tests using test case files
+**`tests/run_tests.py`**: Main test runner
+- Automatically discovers all test cases in `tests/test_cases/`
 - Tests the complete workflow: preprocessing → diff algorithm
-- Uses test case files (`test_case_1_*.txt` and `test_case_2_*.txt`)
-- Verifies the entire pipeline works correctly
+- Outputs results to `output.txt` with formatted header
+- Uses 1-based line indexing for all output
+
+**Bug Tracking Tests**:
+- `test_bug_detector.py`: Tests bug fix detection in commit messages
+- `test_bug_signature.py`: Tests bug signature extraction from diffs
+- `test_bug_backtracking.py`: Tests full bug backtracking pipeline
 
 ### Running Tests
 
-Run the full pipeline tests:
+Run all test cases:
 ```bash
-python3 run_tests.py
+python3 tests/run_tests.py
 ```
 
 This will:
-1. Load test case files from the `tests/` directory
+1. Discover all test case pairs in `tests/test_cases/` directory
 2. Run preprocessing on both old and new files
-3. Compute the diff using the Myers algorithm
-4. Verify the results
+3. Compute the diff using the hybrid algorithm (exact + similarity matching)
+4. Write results to `output.txt` with a formatted header
 
 ### Test Case Files
 
-The test suite uses two test case file pairs:
+Test cases are stored in `tests/test_cases/` with the naming convention:
+- `test_case_N_old.*` - Old version of file N
+- `test_case_N_new.*` - New version of file N
+- `test_case_N_map.txt` - Ground truth mapping (if available)
 
-1. **`test_case_1_*.txt`**: Complex Python function changes
-   - Tests function modifications, additions, and updates
-   - Includes comment handling and code structure changes
+The test suite includes 50+ test cases covering various file types (Python, Java, JavaScript, HTML, etc.) and scenarios (exact matches, modifications, insertions, deletions, and similarity matches).
 
-2. **`test_case_2_*.txt`**: Simple C-style code changes
-   - Tests variable removal and calculation changes
-   - Tests basic code modifications
+### Evaluation
+
+To check correctness against git diff:
+```bash
+python3 scripts/check_correctness.py
+```
+
+This compares the algorithm's output against `git diff` for all test cases and calculates precision, recall, and F1 scores.
 
 ## Algorithm Details
 
@@ -220,15 +230,17 @@ The diff tool uses a **two-pass hybrid approach**:
 
 ### Adding New Features
 
-- **Preprocessing**: Add new normalization rules in `src/preprocessing.py`
-- **Diff Algorithm**: The core algorithm is in `diff.py`
+- **Preprocessing**: Add new normalization rules in `src/diff/preprocessing.py`
+- **Diff Algorithm**: The core Myers algorithm is in `src/diff/diff.py`, hybrid algorithm in `src/diff/diff_hybrid.py`
+- **Similarity Matching**: Matching logic is in `src/diff/matcher.py`
 - **Application**: Main CLI/application logic should go in `app.py`
 
 ### Testing New Features
 
 When adding new features:
-1. Add unit tests to the appropriate test file
-2. Add integration tests if the feature affects the pipeline
-3. Run `python3 run_tests.py` to ensure all tests pass
+1. Add unit tests to the appropriate test file in `tests/`
+2. Add test cases to `tests/test_cases/` if needed
+3. Run `python3 tests/run_tests.py` to ensure all tests pass
+4. Run `python3 scripts/check_correctness.py` to verify correctness against git diff
 
 
