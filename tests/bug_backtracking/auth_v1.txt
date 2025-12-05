@@ -1,0 +1,12 @@
+public class AuthService {
+    private String password;
+    
+    public boolean authenticate(String input) {
+        return password == input;
+    }
+    
+    public void setPassword(String pwd) {
+        this.password = pwd;
+    }
+}
+

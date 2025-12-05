@@ -1,0 +1,20 @@
+public class ListManager {
+    private List<String> items = new ArrayList<>();
+    
+    public void addItem(String item) {
+        items.add(item);
+    }
+    
+    public String getItem(int index) {
+        return items.get(index);
+    }
+    
+    public int getSize() {
+        return items.size();
+    }
+    
+    public void removeItem(int index) {
+        items.remove(index);
+    }
+}
+
