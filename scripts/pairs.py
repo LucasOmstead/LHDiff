@@ -1,12 +1,11 @@
-# pairs.py
-#
 # Use PyDriller to extract old/new versions of modified files
 # so we can build our 25-pair dataset with a mix of file types.
 
-from pydriller import Repository
+from pydriller import Repository # type: ignore
 import os
 from collections import defaultdict
 
+# MUST CHANGE PATH TO REPO WHEN RUNNING ON A DIFFERENT MACHINE
 REPO_PATH = "/Users/aleksavucak/Desktop/airflow"
 
 print(f"[pairs.py] Using repo at: {REPO_PATH}")
@@ -16,11 +15,12 @@ OUTPUT_DIR = "tests"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # How many file pairs to collect total
-MAX_PAIRS = 50  # grab more than 25 so you can choose the best ones
+MAX_PAIRS = 50
 
-# How many pairs PER EXTENSION we allow (to enforce variety)
+# How many pairs PER EXTENSION we allow to enforce variety
 EXT_LIMITS = {
-    ".py": 15,    # Airflow is mostly Python, but don't let it dominate completely
+    # The repo that was driller from is mostly Python, but don't let it dominate completely using constraints
+    ".py": 15,
     ".html": 10,
     ".htm": 5,
     ".js": 10,
@@ -35,9 +35,9 @@ EXT_LIMITS = {
     ".sh": 5,
 }
 
-# For any extension not in EXT_LIMITS but we still want some of, you could
-# define a default limit. For now, we just skip unknown extensions.
-DEFAULT_LIMIT = 0  # change to e.g. 3 if you want a small sample of unknown types
+# For any extension not in EXT_LIMITS but we still want some of, you could define a default limit
+# For now, we just skip unknown extensions
+DEFAULT_LIMIT = 0 
 
 pair_id = 1
 ext_counts = defaultdict(int)
@@ -66,7 +66,8 @@ for commit in Repository(REPO_PATH).traverse_commits():
         old_code = mod.source_code_before
         new_code = mod.source_code
 
-        # Name like: test_case_001_old.py / test_case_001_new.py
+        # Naming convention on the gathered 25 pairs follows:
+            # test_case_001_old.py / test_case_001_new.py
         case_prefix = f"test_case_{pair_id}"
         old_path = os.path.join(OUTPUT_DIR, f"{case_prefix}_old{ext}")
         new_path = os.path.join(OUTPUT_DIR, f"{case_prefix}_new{ext}")

@@ -1,11 +1,9 @@
-# check_correctness.py
+# Script for checking how well our computed line mappings agree with diff-based ground truth.
+# Uses unified diff output as an external reference and reports precision/recall-style metrics.
 #
-# Check correctness of line mappings by comparing against git diff output.
-# This provides independent ground truth validation.
-#
-# Usage:
+# Usage examples:
 #   python3 scripts/check_correctness.py <test_case_num>
-#   python3 scripts/check_correctness.py  # Check all test cases
+#   python3 scripts/check_correctness.py    # run across all test cases
 
 import os
 import sys
@@ -13,14 +11,14 @@ import subprocess
 import tempfile
 from typing import Dict, Set, Tuple, List
 
-# Add parent directory to path for imports
+# Make sure the project root is on sys.path so we can import from src when run directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.diff.preprocessing import preprocess_file
 
 
 def load_mapping_file(path: str) -> Set[Tuple[int, int]]:
-    """Load mapping file and return set of (old_line, new_line) pairs (1-based)."""
+    """Load mapping file and return set of (old_line, new_line) pairs (1-based)"""
     pairs = set()
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -34,12 +32,12 @@ def load_mapping_file(path: str) -> Set[Tuple[int, int]]:
 
 def parse_git_diff_unified(diff_output: str) -> Set[Tuple[int, int]]:
     """
-    Parse unified diff format from git diff to extract line mappings.
+    Parse unified diff format from git diff to extract line mappings
     
     Unified diff format:
     @@ -old_start,old_count +new_start,new_count @@
     
-    Returns set of (old_line, new_line) tuples (1-based).
+    Returns set of (old_line, new_line) tuples (1-based)
     """
     mappings = set()
     lines = diff_output.split('\n')
@@ -48,12 +46,13 @@ def parse_git_diff_unified(diff_output: str) -> Set[Tuple[int, int]]:
     while i < len(lines):
         line = lines[i]
         
-        # Look for hunk header: @@ -old_start,old_count +new_start,new_count @@
+        # Unified diff hunks start with '@@', anything else can be skipped
         if line.startswith('@@'):
             # Parse hunk header
             # Format: @@ -old_start,old_count +new_start,new_count @@
             try:
                 # Extract the numbers from @@ -a,b +c,d @@
+                # Pull out the start line and optional line counts for old and new files
                 import re
                 match = re.search(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', line)
                 if match:
@@ -62,7 +61,7 @@ def parse_git_diff_unified(diff_output: str) -> Set[Tuple[int, int]]:
                     new_start = int(match.group(3))
                     new_count = int(match.group(4)) if match.group(4) else 0
                     
-                    # Process hunk lines
+                    # Track where we are in the old and new files as we walk the hunk
                     old_line = old_start
                     new_line = new_start
                     i += 1
@@ -70,28 +69,33 @@ def parse_git_diff_unified(diff_output: str) -> Set[Tuple[int, int]]:
                     while i < len(lines):
                         hunk_line = lines[i]
                         
-                        # Stop at next hunk or diff header
+                        # If we hit the beginning of another hunk or a new diff header, this hunk is done
                         if hunk_line.startswith('@@') or hunk_line.startswith('diff --git') or hunk_line.startswith('---') or hunk_line.startswith('+++'):
                             break
                         
                         if hunk_line.startswith(' '):
-                            # Context line (unchanged) - maps old_line to new_line
+                            # It exists in both versions at these lines numbers    
+                                # Maps old_line to new_line
                             mappings.add((old_line, new_line))
                             old_line += 1
                             new_line += 1
                         elif hunk_line.startswith('-'):
-                            # Deleted line - only in old, no mapping
+                            # Deleted line
+                                # Only in old, no mapping
                             old_line += 1
                         elif hunk_line.startswith('+'):
-                            # Added line - only in new, no mapping
+                            # Added line 
+                                # Only in new, no mapping
                             new_line += 1
                         elif hunk_line.startswith('\\'):
-                            # End of file marker, ignore
+                            # End of file marker
                             pass
                         
                         i += 1
                     continue
             except Exception:
+                # If parsing one hunk fails, just move on
+                # We will return whatever mappings have been collected
                 pass
         
         i += 1
@@ -101,19 +105,18 @@ def parse_git_diff_unified(diff_output: str) -> Set[Tuple[int, int]]:
 
 def get_git_diff_mappings(old_file_path: str, new_file_path: str) -> Set[Tuple[int, int]]:
     """
-    Use git diff or standard diff to get line mappings between two files.
-    Tries git diff first, falls back to standard diff command.
+    Use git diff or standard diff to get line mappings between two files
+    Tries git diff first, falls back to standard diff command
     """
-    # Try standard diff command first (simpler, more reliable)
-    result = subprocess.run(['diff', '-u', old_file_path, new_file_path],
-                          capture_output=True, text=True, check=False)
+    # Try standard diff command first (Simpler, more reliable)
+    result = subprocess.run(['diff', '-u', old_file_path, new_file_path], capture_output=True, text=True, check=False)
     
     if result.stdout:
         mappings = parse_git_diff_unified(result.stdout)
         if mappings:
             return mappings
     
-    # Fallback: try git diff in temp repo
+    # Fallback: try git diff in temporary repository
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             import shutil
@@ -123,25 +126,20 @@ def get_git_diff_mappings(old_file_path: str, new_file_path: str) -> Set[Tuple[i
             shutil.copy2(old_file_path, old_tmp)
             shutil.copy2(new_file_path, new_tmp)
             
-            # Initialize git repo
-            subprocess.run(['git', 'init'], cwd=tmpdir, 
-                          capture_output=True, check=False, stderr=subprocess.DEVNULL)
+            # Initialize git repo and commit the 'old' version
+            subprocess.run(['git', 'init'], cwd=tmpdir, capture_output=True, check=False, stderr=subprocess.DEVNULL)
             
             # Add first file and commit
-            subprocess.run(['git', 'add', 'old_file'], cwd=tmpdir, 
-                          capture_output=True, check=False, stderr=subprocess.DEVNULL)
-            subprocess.run(['git', 'commit', '-m', 'Initial'], cwd=tmpdir,
-                          capture_output=True, check=False, stderr=subprocess.DEVNULL)
+            subprocess.run(['git', 'add', 'old_file'], cwd=tmpdir, capture_output=True, check=False, stderr=subprocess.DEVNULL)
+            subprocess.run(['git', 'commit', '-m', 'Initial'], cwd=tmpdir, capture_output=True, check=False, stderr=subprocess.DEVNULL)
             
             # Replace with new file and get diff
             os.remove(old_tmp)
             shutil.copy2(new_file_path, old_tmp)
-            subprocess.run(['git', 'add', 'old_file'], cwd=tmpdir,
-                          capture_output=True, check=False, stderr=subprocess.DEVNULL)
+            subprocess.run(['git', 'add', 'old_file'], cwd=tmpdir, capture_output=True, check=False, stderr=subprocess.DEVNULL)
             
             # Get diff output
-            result = subprocess.run(['git', 'diff', '--cached', '--unified=0', 'old_file'],
-                                  cwd=tmpdir, capture_output=True, text=True, check=False)
+            result = subprocess.run(['git', 'diff', '--cached', '--unified=0', 'old_file'], cwd=tmpdir, capture_output=True, text=True, check=False)
             
             if result.stdout:
                 return parse_git_diff_unified(result.stdout)
@@ -154,8 +152,8 @@ def get_git_diff_mappings(old_file_path: str, new_file_path: str) -> Set[Tuple[i
 def compare_mappings(our_mappings: Set[Tuple[int, int]], 
                     git_mappings: Set[Tuple[int, int]]) -> Dict:
     """
-    Compare our mappings against git diff mappings.
-    Returns comparison statistics.
+    Compare our mappings against git diff mappings
+    Returns comparison statistics
     """
     # Exact matches
     exact_matches = our_mappings & git_mappings
@@ -222,7 +220,7 @@ def check_test_case(case_num: int, test_dir: str) -> Dict:
 
 
 def check_all(test_dir: str):
-    """Check all test cases."""
+    """Check all test cases"""
     case_ids = []
     for name in os.listdir(test_dir):
         if name.startswith("test_case_") and "_old." in name:
@@ -319,4 +317,3 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

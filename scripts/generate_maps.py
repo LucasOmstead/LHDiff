@@ -57,7 +57,7 @@ def main():
 
     while i < len(lines):
         line = lines[i].strip()
-        # Look for lines like "Test case 1:"
+        # Look for lines like "Test case 1: "
         if line.startswith("Test case "):
             case_num += 1
 
