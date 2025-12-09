@@ -21,8 +21,7 @@ A hybrid line-based diff tool that combines the Myers diff algorithm (exact matc
 
 ```
 LHDiff/
-├── app.py                  # Main application (to be implemented)
-├── README.md               # Project documentation
+├── README.md              # Project documentation
 ├── .gitignore             # Git ignore rules
 ├── src/                   # Source package
 │   ├── __init__.py        # Package initialization
