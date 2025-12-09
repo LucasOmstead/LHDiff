@@ -1,5 +1,5 @@
 """
-traces bugs from fix commit back to the introducing commit.
+Traces bugs from fix commit back to the introducing commit
 """
 
 from typing import List, Dict, Optional
@@ -18,19 +18,19 @@ from .line_tracker import (
 
 
 class BugBacktracker:
-    """main API for bug backtracking - traces bugs to their origin."""
+    """Main API for bug backtracking, this traces bugs to their origin"""
     
     def __init__(self, desc_file: str, files_directory: str):
-        """initialize with desc.txt path and files directory."""
+        """Initialize with desc.txt path and files directory"""
         self.desc_file = desc_file
         self.files_directory = files_directory
         
-        #cache for loaded data
+        # Cache for loaded data
         self._commit_histories: Dict[str, CommitHistory] = {}
         self._version_loaders: Dict[str, FileVersionLoader] = {}
     
     def _get_commit_history(self, file_name: str) -> CommitHistory:
-        """get or create CommitHistory for a file."""
+        """Get or create CommitHistory for a file"""
         if file_name not in self._commit_histories:
             self._commit_histories[file_name] = CommitHistory(
                 self.desc_file, file_name
@@ -38,7 +38,7 @@ class BugBacktracker:
         return self._commit_histories[file_name]
     
     def _get_version_loader(self, file_name: str) -> FileVersionLoader:
-        """get or create FileVersionLoader for a file."""
+        """Get or create FileVersionLoader for a file"""
         if file_name not in self._version_loaders:
             self._version_loaders[file_name] = FileVersionLoader(
                 self.files_directory, file_name
@@ -46,7 +46,7 @@ class BugBacktracker:
         return self._version_loaders[file_name]
     
     def analyze_file(self, file_name: str, verbose: bool = True) -> List[BugLineage]:
-        """analyze all bug fixes in a file's history."""
+        """Analyze all bug fixes in a file's history"""
         commit_history = self._get_commit_history(file_name)
         
         if not commit_history.has_bug_fixes():
@@ -71,7 +71,7 @@ class BugBacktracker:
                 lineage = self.trace_single_bug(file_name, fix_commit.version)
                 lineages.append(lineage)
             except BugTraceError as e:
-                #create a failed lineage entry
+                # Create a failed lineage entry
                 lineage = BugLineage(
                     fix_commit=fix_commit,
                     fix_version=fix_commit.version,
@@ -95,14 +95,14 @@ class BugBacktracker:
         bug_fix_version: int,
         similarity_threshold: float = 0.7
     ) -> BugLineage:
-        """trace a specific bug fix back to its origin."""
+        """Trace a specific bug fix back to its origin"""
         commit_history = self._get_commit_history(file_name)
         version_loader = self._get_version_loader(file_name)
         
-        #get the fix commit info
+        # Get the fix commit info
         fix_commit = commit_history.get_commit_at_version(bug_fix_version)
         if fix_commit is None:
-            #create placeholder if not found in desc.txt
+            # Create placeholder if not found in desc.txt
             fix_commit = CommitInfo(
                 version=bug_fix_version,
                 message="(commit message not found)",
@@ -110,18 +110,18 @@ class BugBacktracker:
                 is_bug_fix=True
             )
         
-        #load fix version and version before fix
+        # Load fix version and version before fix
         try:
             file_after_fix = version_loader.load_version(bug_fix_version)
             file_before_fix = version_loader.load_version(bug_fix_version - 1)
         except FileVersionNotFound as e:
             raise TraceIncomplete(f"Cannot load required versions: {e}")
         
-        #extract bug signature from the fix diff
+        # Extract bug signature from the fix diff
         bug_signature = extract_bug_signature(file_before_fix, file_after_fix)
         
         if bug_signature.is_empty():
-            #no buggy lines identified - might be insertion-only fix
+            # No buggy lines identified, might be insertion-only fix
             return BugLineage(
                 fix_commit=fix_commit,
                 fix_version=bug_fix_version,
@@ -134,48 +134,49 @@ class BugBacktracker:
                 error_message="No buggy lines identified in fix diff"
             )
         
-        #load all versions from 0 to before-fix for backward search
+        # Load all versions from 0 to before-fix for backward search
         versions_to_search = []
         for v in range(bug_fix_version - 1, -1, -1):  #newest to oldest
             try:
                 versions_to_search.append(version_loader.load_version(v))
             except FileVersionNotFound:
-                break  #stop if we can't load earlier versions
+                # Stop if we can't load earlier versions
+                break
         
         if not versions_to_search:
             raise TraceIncomplete("No versions available to search")
         
-        #find where bug was introduced
+        # Find where bug was introduced
         introduction_version, matches_by_version = find_bug_introduction(
             versions_to_search, bug_signature, similarity_threshold
         )
         
-        #get introduction commit info
+        # Get introduction commit info
         introduction_commit = None
         if introduction_version is not None:
             introduction_commit = commit_history.get_commit_at_version(introduction_version)
         
-        #get introduction lines
+        # Get introduction lines
         introduction_lines = []
         if introduction_version is not None and introduction_version in matches_by_version:
             introduction_lines = matches_by_version[introduction_version].line_numbers
         elif introduction_version == 0:
-            #bug was in initial version
+            # Bug was in initial version
             introduction_lines = bug_signature.line_numbers
         
-        #build versions_with_bug list
+        # Build versions_with_bug list
         versions_with_bug = sorted(
             matches_by_version.values(),
             key=lambda m: m.version
         )
         
-        #calculate confidence
+        # Calculate confidence
         confidence = calculate_trace_confidence(
             bug_signature, matches_by_version,
             introduction_version, bug_fix_version
         )
         
-        #calculate commits between
+        # Calculate commits between
         commits_between = 0
         if introduction_version is not None:
             commits_between = bug_fix_version - introduction_version
@@ -193,13 +194,13 @@ class BugBacktracker:
             trace_complete=introduction_version is not None
         )
         
-        #print results for user visibility
+        # Print results for user visibility
         self._print_trace_results(lineage)
         
         return lineage
     
     def batch_analyze(self, file_names: List[str]) -> Dict[str, List[BugLineage]]:
-        """analyze multiple files in batch."""
+        """Analyze multiple files in batch"""
         results = {}
         for file_name in file_names:
             try:
@@ -209,7 +210,7 @@ class BugBacktracker:
         return results
     
     def get_file_summary(self, file_name: str) -> str:
-        """get a summary of commits and bug fixes for a file."""
+        """Get a summary of commits and bug fixes for a file"""
         commit_history = self._get_commit_history(file_name)
         version_loader = self._get_version_loader(file_name)
         
@@ -223,14 +224,14 @@ class BugBacktracker:
         return "\n".join(lines)
     
     def clear_cache(self) -> None:
-        """clear all cached data."""
+        """Clear all cached data"""
         self._commit_histories.clear()
         for loader in self._version_loaders.values():
             loader.clear_cache()
         self._version_loaders.clear()
     
     def _print_trace_results(self, lineage: BugLineage) -> None:
-        """print trace results."""
+        """Print trace results"""
         print("\n" + "="*60)
         print("BUG TRACE RESULTS")
         print("="*60)
@@ -240,7 +241,7 @@ class BugBacktracker:
         print(f"   Version: v{lineage.fix_version}")
         print(f"   Commit: {lineage.fix_commit.message}")
         
-        #bug introduction info
+        # Bug introduction info
         print(f"\nBug Introduction:")
         if lineage.introduction_version >= 0:
             print(f"   Version: v{lineage.introduction_version}")
@@ -253,7 +254,7 @@ class BugBacktracker:
         else:
             print(f"   Not found (confidence too low)")
         
-        #summary stats
+        # Summary stats
         print(f"\nSummary:")
         print(f"   Commits Between: {lineage.commits_between}")
         print(f"   Trace Complete: {'Yes' if lineage.trace_complete else 'No'}")
@@ -267,12 +268,12 @@ def backtrack_bug_to_origin(
     file_name: str,
     bug_fix_version: int
 ) -> BugLineage:
-    """convenience function to trace a single bug."""
+    """Convenience function to trace a single bug"""
     backtracker = BugBacktracker(desc_file, files_directory)
     return backtracker.trace_single_bug(file_name, bug_fix_version)
 
 
-#main entry point for testing
+# Main entry point for testing
 if __name__ == "__main__":
     print("Bug Backtracker Module")
     print("=" * 40)
@@ -284,4 +285,3 @@ if __name__ == "__main__":
     print()
     print("  for lineage in lineages:")
     print("      print(lineage.summary())")
-

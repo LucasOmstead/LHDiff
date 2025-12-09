@@ -1,31 +1,45 @@
 import re
 
+# Utilities to parse commit messages from a text file and detect which messages are likely bug fixes based on 
+# keywords, prefixes, and issue references
 def parse_commit_messages(file_path, target_file_name=None):
+    """
+    Read a simple commit log file and group messages by file name.
+
+    The expected format is blocks separated by blank lines, where each block
+    starts with a line like:
+        <file_name>:
+    followed by the commit message body.
+    """
     commits = {}
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
+    # Split commits on double newlines so each block represents 1 entry
     entries = content.split('\n\n')
     for entry in entries:
         entry = entry.strip()
         if not entry or ':' not in entry:
             continue
+        # Split only on the first colon to separate file name from message text
         parts = entry.split(':', 1)
         if len(parts) != 2:
             continue
         file_name = parts[0].strip()
         message = parts[1].strip()
+        # Accumulate all messages belonging to the same file
         if file_name not in commits:
             commits[file_name] = []
         commits[file_name].append(message)
     
+    # Optionally returns only the messages for a single file
     if target_file_name:
         return commits.get(target_file_name, [])
     return commits
 
 class BugDetector:
     def __init__(self):
-        #keywords commonly found in bug fix commits
+        # Keywords commonly found in bug fix commits
         self.fix_keywords = [
             "fix", "bug", "error", "issue", "patch", "resolve",
             "crash", "fatal", "critical", "urgent", "security", "vulnerability",
@@ -40,36 +54,37 @@ class BugDetector:
             "repair", "correct", "amend", "rectify"
         ]
         
-        #conventional commit prefixes for bug fixes
+        # Conventional commit prefixes for bug fixes
         self.conventional_prefixes = [
             "fix:", "fix(", "hotfix:", "hotfix(", 
             "bugfix:", "bugfix(", "perf:", "perf(",
             "revert:", "revert(", "security:", "security("
         ]
     def is_bug_fix(self, message):
-        #lowercase for case-insensitive matching
+        # Lowercase for case-insensitive matching
         text = message.lower()
         
-        #check conventional commit prefix
+        # Check conventional commit prefix
         for prefix in self.conventional_prefixes:
             if text.startswith(prefix):
                 return True
         
-        #check for bug-related keywords
+        # Check for bug-related keywords
         for word in self.fix_keywords:
             if word in text:
                 return True
-        #check for issue numbers
+        # Check for issue numbers
         if re.search(r"#\d+", text):
             return True
-        #check for action words with issue numbers
+        # Check for action words with issue numbers
         if re.search(r"(closes|fixes|resolves|fixed|resolved)\s+#?\d+", text):
             return True
-        #no bug indicators found
+        # No bug indicators found
         return False
 
 
 if __name__ == "__main__":
+    # Simple self-test demonstrating how the BugDetector class behaves
     detector = BugDetector()
     examples = [
         "fix crash on login",
@@ -121,6 +136,7 @@ refactor authentication flow
 auth:
 hotfix: critical security issue in token generation"""
     
+    # Write a temporary test file and feed it through the parser
     with open("test_commits.txt", "w") as f:
         f.write(test_data)
     
@@ -134,4 +150,5 @@ hotfix: critical security issue in token generation"""
     print(f"\nuser commits: {user_commits}")
     
     import os
+    # Clean up the temporary file after the demonstration run
     os.remove("test_commits.txt")

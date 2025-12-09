@@ -1,6 +1,6 @@
 """
-manages commit history from desc.txt files.
-parses commits and identifies bug fixes.
+Manages commit history from desc.txt files
+Parses commits and identifies bug fixes
 """
 
 from typing import List, Dict, Optional
@@ -9,33 +9,35 @@ from .bug_detector import BugDetector, parse_commit_messages
 
 
 class CommitHistory:
-    """manages commit history for a file from desc.txt."""
+    """Manages commit history for a file from desc.txt"""
     
     def __init__(self, desc_file_path: str, file_name: str):
-        """initialize with desc.txt path and target file name."""
+        """Initialize with desc.txt path and target file name"""
         self.desc_file_path = desc_file_path
         self.file_name = file_name
         self.bug_detector = BugDetector()
         
-        #parse commits on initialization
+        # Parse commits on initialization
         self._commits: List[CommitInfo] = []
         self._parse_commits()
     
     def _parse_commits(self) -> None:
-        """parse commits from desc.txt and build CommitInfo objects."""
+        """Parse commits from desc.txt and build CommitInfo objects"""
         try:
-            #use existing parse_commit_messages function
+            # Use existing parse_commit_messages function
             messages = parse_commit_messages(self.desc_file_path, self.file_name)
             
             if not messages:
-                #no commits found for this file
+                # No commits found for this file
                 self._commits = []
                 return
             
-            #build CommitInfo objects
-            #version 0 = initial state, version 1 = after first commit
+            # Build CommitInfo objects
+                # Version 0 = initial state
+                # Version 1 = after first commit
             for i, message in enumerate(messages):
-                version = i + 1  #commits start at version 1
+                # Commits start at version 1
+                version = i + 1
                 is_bug_fix = self.bug_detector.is_bug_fix(message)
                 
                 commit = CommitInfo(
@@ -52,36 +54,36 @@ class CommitHistory:
             raise InvalidDataFormat(f"Error parsing desc.txt: {e}")
     
     def get_commits(self) -> List[CommitInfo]:
-        """returns all commits in chronological order."""
+        """Returns all commits in chronological order"""
         return self._commits.copy()
     
     def get_bug_fix_commits(self) -> List[CommitInfo]:
-        """returns only bug fix commits."""
+        """Returns only bug fix commits"""
         return [c for c in self._commits if c.is_bug_fix]
     
     def get_commit_at_version(self, version: int) -> Optional[CommitInfo]:
-        """get commit info for a specific version."""
+        """Get commit info for a specific version"""
         for commit in self._commits:
             if commit.version == version:
                 return commit
         return None
     
     def get_latest_version(self) -> int:
-        """get the latest version number."""
+        """Get the latest version number"""
         if not self._commits:
             return 0
         return self._commits[-1].version
     
     def get_version_count(self) -> int:
-        """get total number of versions (including v0)."""
+        """Get total number of versions (Including v0)"""
         return len(self._commits) + 1
     
     def has_bug_fixes(self) -> bool:
-        """check if there are any bug fix commits."""
+        """Check if there are any bug fix commits"""
         return any(c.is_bug_fix for c in self._commits)
     
     def get_commits_between(self, start_version: int, end_version: int) -> List[CommitInfo]:
-        """get commits between two versions (exclusive start, inclusive end)."""
+        """Get commits between two versions (exclusive start, inclusive end)"""
         return [c for c in self._commits if start_version < c.version <= end_version]
     
     def __len__(self) -> int:
@@ -92,7 +94,7 @@ class CommitHistory:
         return f"CommitHistory(file={self.file_name}, commits={len(self._commits)}, bug_fixes={bug_count})"
     
     def summary(self) -> str:
-        """generate a summary of the commit history."""
+        """Generate a summary of the commit history"""
         lines = [
             f"Commit History for '{self.file_name}'",
             f"Total commits: {len(self._commits)}",
@@ -105,4 +107,3 @@ class CommitHistory:
             lines.append(f"v{commit.version}: {commit.message}{marker}")
         
         return "\n".join(lines)
-

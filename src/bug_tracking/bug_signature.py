@@ -1,6 +1,5 @@
 """
-extracts bug signatures from bug fix diffs.
-used to search backward through history.
+Extracts bug signatures from bug fix diffs used to search backward through history
 """
 
 from typing import List, Tuple, Optional
@@ -14,36 +13,36 @@ def extract_bug_signature(
     file_after_fix: FileVersion,
     context_window: int = 3
 ) -> BugSignature:
-    """analyze the bug fix diff to identify what was buggy."""
-    #convert to format expected by diff algorithm
+    """Analyze the bug fix diff to identify what was buggy"""
+    # Convert to format expected by diff algorithm
     old_for_diff = [[line] for line in file_before_fix.preprocessed]
     new_for_diff = [[line] for line in file_after_fix.preprocessed]
     
-    #get hybrid diff
+    # Get hybrid diff
     diff_ops = get_diff_hybrid(old_for_diff, new_for_diff)
     
-    #parse diff to identify buggy lines
+    # Parse diff to identify buggy lines
     buggy_line_numbers = []
     fix_type_counts = {"deletion": 0, "modification": 0, "insertion": 0}
     
     for op in diff_ops:
         if op.endswith('-'):
-            #deletion: line was removed (was buggy)
-            # Note: diff ops use 1-based indexing, convert to 0-based for array access
+            # Deletion: line was removed (Buggy)
+                # Note: diff ops use 1-based indexing, convert to 0-based for array access
             line_num_1based = int(op[:-1])
             buggy_line_numbers.append(line_num_1based - 1)
             fix_type_counts["deletion"] += 1
         elif '~' in op:
-            #modification: line was changed (was buggy)
+            # Modification: line was changed (Buggy)
             # Note: diff ops use 1-based indexing, convert to 0-based for array access
             old_num, new_num = op.split('~')
             buggy_line_numbers.append(int(old_num) - 1)
             fix_type_counts["modification"] += 1
         elif op.endswith('+'):
-            #insertion: new line added (might be fix for missing code)
+            # Insertion: new line added
             fix_type_counts["insertion"] += 1
     
-    #determine fix type
+    # Determine fix type
     if fix_type_counts["modification"] > 0:
         fix_type = "modification"
     elif fix_type_counts["deletion"] > 0 and fix_type_counts["insertion"] > 0:
@@ -55,7 +54,7 @@ def extract_bug_signature(
     else:
         fix_type = "unknown"
     
-    #extract buggy lines from before-fix file
+    # Extract buggy lines from before-fix file
     buggy_lines = []
     buggy_lines_normalized = []
     
@@ -64,7 +63,7 @@ def extract_bug_signature(
             buggy_lines.append(file_before_fix.lines[line_num])
             buggy_lines_normalized.append(file_before_fix.preprocessed[line_num])
     
-    #extract context
+    # Extract context
     context_before = []
     context_after = []
     
@@ -72,13 +71,13 @@ def extract_bug_signature(
         min_line = min(buggy_line_numbers)
         max_line = max(buggy_line_numbers)
         
-        #context before
+        # Context before
         start = max(0, min_line - context_window)
         for i in range(start, min_line):
             if i < len(file_before_fix.lines):
                 context_before.append(file_before_fix.lines[i])
         
-        #context after
+        # Context after
         end = min(len(file_before_fix.lines), max_line + context_window + 1)
         for i in range(max_line + 1, end):
             if i < len(file_before_fix.lines):
@@ -100,7 +99,7 @@ def build_line_mapping(
     old_version: int,
     new_version: int
 ) -> LineMapping:
-    """parse diff operations to create line number mapping."""
+    """ Parse diff operations to create line number mapping"""
     mapping = LineMapping(
         old_version=old_version,
         new_version=new_version
@@ -108,19 +107,19 @@ def build_line_mapping(
     
     for op in diff_operations:
         if ':' in op and '~' not in op:
-            #exact match: "x:y"
+            # Exact match: "x:y"
             old_num, new_num = map(int, op.split(':'))
             mapping.exact_matches[new_num] = old_num
         elif '~' in op:
-            #similarity match: "x~y"
+            # Similarity match: "x~y"
             old_num, new_num = map(int, op.split('~'))
             mapping.similarity_matches[new_num] = old_num
         elif op.endswith('-'):
-            #deletion: "x-"
+            # Deletion: "x-"
             old_num = int(op[:-1])
             mapping.deletions.add(old_num)
         elif op.endswith('+'):
-            #insertion: "x+"
+            # Insertion: "x+"
             new_num = int(op[:-1])
             mapping.insertions.add(new_num)
     
@@ -131,16 +130,15 @@ def compute_diff_and_mapping(
     file_old: FileVersion,
     file_new: FileVersion
 ) -> Tuple[List[str], LineMapping]:
-    """compute diff between two versions and build line mapping."""
-    #convert to format expected by diff algorithm
+    """Compute diff between two versions and build line mapping"""
+    # Convert to format expected by diff algorithm
     old_for_diff = [[line] for line in file_old.preprocessed]
     new_for_diff = [[line] for line in file_new.preprocessed]
     
-    #get hybrid diff
+    # Get hybrid diff
     diff_ops = get_diff_hybrid(old_for_diff, new_for_diff)
     
-    #build line mapping
+    # Build line mapping
     mapping = build_line_mapping(diff_ops, file_old.version, file_new.version)
     
     return diff_ops, mapping
-

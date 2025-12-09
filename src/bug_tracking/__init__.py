@@ -1,4 +1,4 @@
-"""bug tracking and backtracking functionality."""
+"""Bug tracking and backtracking functionality"""
 
 from .bug_detector import BugDetector, parse_commit_messages
 from .bug_signature import extract_bug_signature, build_line_mapping, compute_diff_and_mapping
@@ -11,16 +11,15 @@ from .line_tracker import (
 )
 
 __all__ = [
-    #bug detection
+    # Bug detection
     'BugDetector', 'parse_commit_messages',
-    #bug signature
+    # Bug signature
     'extract_bug_signature', 'build_line_mapping', 'compute_diff_and_mapping',
-    #bug backtracking
+    # Bug backtracking
     'BugBacktracker', 'backtrack_bug_to_origin',
-    #history management
+    # History management
     'CommitHistory', 'FileVersionLoader',
-    #line tracking
+    # Line tracking
     'find_bug_in_version', 'find_bug_introduction',
     'track_line_backward', 'track_lines_backward', 'calculate_trace_confidence',
 ]
-
