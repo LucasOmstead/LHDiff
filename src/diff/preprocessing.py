@@ -1,44 +1,45 @@
-#preprocessing.py - normalize source code lines before matching
+# preprocessing.py
+# Normalize source code lines before matching
 
 import re
 
 
 def preprocess_line(line: str) -> str:
-    """normalize a single line of source code for matching."""
-    #strip whitespace
+    """Normalize a single line of source code for matching"""
+    # Strip whitespace
     line = line.strip()
 
-    #tabs to spaces
+    # Tabs to spaces
     line = line.replace("\t", " ")
 
-    #lowercase
+    # Lowercase
     line = line.lower()
 
-    #remove inline comments
+    # Remove inline comments
     line = re.split(r'//|#', line)[0].strip()
 
     if not line:
         return ""
 
-    #add spaces around operators
+    # Add spaces around operators
     line = re.sub(r'([=+\-*/<>])', r' \1 ', line)
 
-    #collapse multiple spaces
+    # Collapse multiple spaces
     line = re.sub(r'\s+', ' ', line)
 
-    #remove trailing semicolons
+    # Remove trailing semicolons
     line = line.rstrip(" ;")
 
     return line
 
 
 def preprocess_lines(lines):
-    """apply preprocess_line to a list of lines."""
+    """Apply preprocess_line to a list of lines"""
     return [preprocess_line(line) for line in lines]
 
 
 def preprocess_file(path: str, encoding: str = "utf-8"):
-    """load file and return list of preprocessed lines."""
+    """Load file and return list of preprocessed lines"""
     with open(path, "r", encoding=encoding) as f:
         raw_lines = f.readlines()
     return preprocess_lines(raw_lines)

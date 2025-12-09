@@ -1,5 +1,5 @@
 """
-diff - preprocessing, similarity matching, and diff algorithms.
+diff - preprocessing, similarity matching, and diff algorithms
 """
 
 from .preprocessing import preprocess_line, preprocess_lines, preprocess_file
@@ -13,4 +13,3 @@ __all__ = [
     'levenshtein', 'combined_similarity', 'get_context',
     'get_diff', 'get_diff_hybrid', 'get_diff_with_hash', 'hash_diff',
 ]
-
