@@ -13,10 +13,14 @@ from typing import List, Dict, Optional, Set, Tuple
 @dataclass
 class CommitInfo:
     """Represents a single commit in the mock git history"""
-    version: int              # Version number (0, 1, 2, ...)
-    message: str              # Commit message
-    file_name: str            # File this commit belongs to
-    is_bug_fix: bool = False  # Whether this is a bug fix commit
+    # Version number (0, 1, 2, ...)
+    version: int
+    # Commit message
+    message: str
+    # File this commit belongs to
+    file_name: str
+    # Whether this is a bug fix commit
+    is_bug_fix: bool = False
     
     def __repr__(self) -> str:
         fix_marker = " [BUG FIX]" if self.is_bug_fix else ""
