@@ -1,8 +1,9 @@
 """
 models.py
 
-Data models for bug backtracking feature.
-Contains dataclasses for commits, file versions, bug signatures, and lineage tracking.
+Data models for bug backtracking feature
+
+Contains dataclasses for commits, file versions, bug signatures, and lineage tracking
 """
 
 from dataclasses import dataclass, field
@@ -11,7 +12,7 @@ from typing import List, Dict, Optional, Set, Tuple
 
 @dataclass
 class CommitInfo:
-    """Represents a single commit in the mock git history."""
+    """Represents a single commit in the mock git history"""
     version: int              # Version number (0, 1, 2, ...)
     message: str              # Commit message
     file_name: str            # File this commit belongs to
@@ -24,11 +25,14 @@ class CommitInfo:
 
 @dataclass
 class FileVersion:
-    """Represents a file at a specific version."""
+    """Represents a file at a specific version"""
     version: int
-    file_path: str            # Path to file_vN.txt
-    lines: List[str]          # File content (raw lines)
-    preprocessed: List[str]   # Normalized content for matching
+    # Path to file_vN.txt
+    file_path: str
+    # File content (raw lines)
+    lines: List[str]
+    # Normalized content for matching
+    preprocessed: List[str]
     
     def __len__(self) -> int:
         return len(self.lines)
@@ -40,41 +44,50 @@ class FileVersion:
 @dataclass
 class BugSignature:
     """
-    Represents the 'buggy code' pattern extracted from a bug fix.
-    Used to search backward through history to find where bug was introduced.
+    Represents the 'buggy code' pattern extracted from a bug fix
+
+    Used to search backward through history to find where bug was introduced
     """
-    # Lines that were changed/deleted in the fix (the buggy code)
-    buggy_lines: List[str]              # Raw buggy code
-    buggy_lines_normalized: List[str]   # Preprocessed for matching
+    # Lines that were changed/deleted in the fix (The buggy code)
+    # Raw buggy code
+    buggy_lines: List[str]
+    # Preprocessed for matching
+    buggy_lines_normalized: List[str]
     
     # Line numbers in the pre-fix version
     line_numbers: List[int]
     
     # Context for better matching
-    context_before: List[str]           # Lines before the bug
-    context_after: List[str]            # Lines after the bug
+    # Lines before the bug
+    context_before: List[str]
+    # Lines after the bug
+    context_after: List[str]
     
     # Type of fix
-    fix_type: str                       # "deletion", "modification", "insertion_fix", "complex"
+        # "deletion", "modification", "insertion_fix", "complex"
+    fix_type: str
     
     # Diff operations that represent the fix
-    fix_operations: List[str]           # From hybrid diff
+    fix_operations: List[str]
     
     def __repr__(self) -> str:
         return f"BugSignature({self.fix_type}, {len(self.buggy_lines)} buggy lines at {self.line_numbers})"
     
     def is_empty(self) -> bool:
-        """Check if signature has no buggy lines (possible false positive)."""
+        """Check if signature has no buggy lines (Possible false positive)"""
         return len(self.buggy_lines) == 0
 
 
 @dataclass
 class BugMatch:
-    """Represents finding the bug signature in a specific version."""
+    """Represents finding the bug signature in a specific version"""
     version: int
-    line_numbers: List[int]       # Where bug was found
-    matched_lines: List[str]      # The actual matched lines
-    confidence: float             # Match confidence (0-1)
+    # Where bug was found
+    line_numbers: List[int]
+    # The actual matched lines
+    matched_lines: List[str]
+    # Match confidence (0-1)
+    confidence: float
     
     def __repr__(self) -> str:
         return f"BugMatch(v{self.version}, lines {self.line_numbers}, conf={self.confidence:.2f})"
@@ -82,22 +95,27 @@ class BugMatch:
 
 @dataclass
 class LineMapping:
-    """Maps line numbers between two consecutive versions."""
+    """Maps line numbers between two consecutive versions"""
     old_version: int
     new_version: int
     
     # Mappings: new_line_num -> old_line_num
-    exact_matches: Dict[int, int] = field(default_factory=dict)     # x:y matches
-    similarity_matches: Dict[int, int] = field(default_factory=dict)  # x~y matches
+    # x:y matches
+    exact_matches: Dict[int, int] = field(default_factory=dict)
+    # x~y matches
+    similarity_matches: Dict[int, int] = field(default_factory=dict)
     
     # Track operations
-    deletions: Set[int] = field(default_factory=set)      # Lines deleted from old
-    insertions: Set[int] = field(default_factory=set)     # Lines inserted in new
+    # Lines deleted from old
+    deletions: Set[int] = field(default_factory=set)
+    # Lines inserted in new
+    insertions: Set[int] = field(default_factory=set)
     
     def get_old_line(self, new_line: int) -> Optional[int]:
         """
-        Get the corresponding old line number for a new line number.
-        Returns None if the line was inserted (didn't exist before).
+        Get the corresponding old line number for a new line number
+
+        Returns None if the line was inserted (Didn't exist before)
         """
         if new_line in self.exact_matches:
             return self.exact_matches[new_line]
@@ -109,8 +127,9 @@ class LineMapping:
     
     def get_new_line(self, old_line: int) -> Optional[int]:
         """
-        Get the corresponding new line number for an old line number.
-        Returns None if the line was deleted.
+        Get the corresponding new line number for an old line number
+
+        Returns None if the line was deleted
         """
         if old_line in self.deletions:
             return None
@@ -129,7 +148,7 @@ class LineMapping:
 
 @dataclass
 class LineHistory:
-    """Tracks a line's evolution through multiple versions."""
+    """Tracks a line's evolution through multiple versions"""
     # List of (version, line_number) tuples, from newest to oldest
     evolution: List[Tuple[int, int]] = field(default_factory=list)
     
@@ -137,11 +156,11 @@ class LineHistory:
     introduction_version: Optional[int] = None
     
     def add_version(self, version: int, line_num: int):
-        """Add a version to the history."""
+        """Add a version to the history"""
         self.evolution.append((version, line_num))
     
     def get_line_at_version(self, version: int) -> Optional[int]:
-        """Get line number at a specific version."""
+        """Get line number at a specific version"""
         for v, line in self.evolution:
             if v == version:
                 return line
@@ -157,8 +176,9 @@ class LineHistory:
 @dataclass
 class BugLineage:
     """
-    Complete trace of a bug from introduction to fix.
-    This is the main result returned by the backtracker.
+    Complete trace of a bug from introduction to fix
+
+    This is the main result returned by the backtracker
     """
     # Bug fix information
     fix_commit: CommitInfo
@@ -172,7 +192,7 @@ class BugLineage:
     introduction_version: int
     introduction_lines: List[int]
     
-    # Trace path - versions where bug was found
+    # Trace path (Versions where bug was found)
     versions_with_bug: List[BugMatch] = field(default_factory=list)
     
     # Line evolution through versions
@@ -182,9 +202,12 @@ class BugLineage:
     confidence: float = 0.0
     
     # Metadata
-    commits_between: int = 0  # How many commits between intro and fix
-    trace_complete: bool = True  # Whether trace completed successfully
-    error_message: Optional[str] = None  # Error if trace failed
+    # How many commits between intro and fix
+    commits_between: int = 0
+    # Whether trace completed successfully
+    trace_complete: bool = True
+    # Error if trace failed
+    error_message: Optional[str] = None
     
     def __repr__(self) -> str:
         if self.introduction_commit:
@@ -194,7 +217,7 @@ class BugLineage:
         return f"BugLineage(fix=v{self.fix_version}, introduction=UNKNOWN)"
     
     def summary(self) -> str:
-        """Generate a human-readable summary of the bug lineage."""
+        """Generate a human-readable summary of the bug lineage"""
         lines = [
             "=" * 60,
             "BUG LINEAGE REPORT",
@@ -240,26 +263,25 @@ class BugLineage:
 
 # Custom exceptions for bug tracking
 class BugTraceError(Exception):
-    """Base exception for bug tracing errors."""
+    """Base exception for bug tracing errors"""
     pass
 
 
 class FileVersionNotFound(BugTraceError):
-    """File version doesn't exist."""
+    """File version doesn't exist"""
     pass
 
 
 class NoBugFixFound(BugTraceError):
-    """No bug fix commits found for the file."""
+    """No bug fix commits found for the file"""
     pass
 
 
 class TraceIncomplete(BugTraceError):
-    """Unable to complete trace (low confidence or missing data)."""
+    """Unable to complete trace (low confidence or missing data)"""
     pass
 
 
 class InvalidDataFormat(BugTraceError):
-    """Data format is invalid (desc.txt or file versions)."""
+    """Data format is invalid (desc.txt or file versions)"""
     pass
-

@@ -1,7 +1,7 @@
 """
-LHDiff source package.
+LHDiff source package
 
-Contains preprocessing, matching, and bug backtracking utilities for diff computation.
+Contains preprocessing, matching, and bug backtracking utilities for diff computation
 """
 
 # Core diff functionality
@@ -44,4 +44,3 @@ __all__ = [
     'find_bug_in_version', 'track_line_backward',
     'BugBacktracker', 'backtrack_bug_to_origin',
 ]
-
