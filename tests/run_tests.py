@@ -1,6 +1,7 @@
 """
-test runner for the full pipeline (preprocessing -> diff).
-outputs results to output.txt.
+Test runner for the full pipeline (preprocessing -> diff)
+
+Outputs results to output.txt
 """
 
 import sys
@@ -9,25 +10,28 @@ import traceback
 import re
 from collections import defaultdict
 
-#add parent directory to path for imports
+# Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Output file name
 OUTPUT_FILE = "output.txt"
 
 
 def find_all_test_cases(test_cases_dir):
-    """find all test case pairs in test_cases directory."""
+    """Find all test case pairs in test_cases directory"""
     test_cases = {}
     
     if not os.path.exists(test_cases_dir):
         return test_cases
     
-    #group files by test case number
-    old_files = defaultdict(dict)  #{case_num: {ext: path}}
-    new_files = defaultdict(dict)   #{case_num: {ext: path}}
+    # Group files by test case number
+    # {case_num: {ext: path}}
+    old_files = defaultdict(dict)
+    #{case_num: {ext: path}}
+    new_files = defaultdict(dict)
     
     for filename in os.listdir(test_cases_dir):
-        #match pattern: test_case_N_old.ext or test_case_N_new.ext
+        # Match pattern: test_case_N_old.ext or test_case_N_new.ext
         old_match = re.match(r'test_case_(\d+)_old\.(.+)', filename)
         new_match = re.match(r'test_case_(\d+)_new\.(.+)', filename)
         
@@ -40,9 +44,9 @@ def find_all_test_cases(test_cases_dir):
             ext = new_match.group(2)
             new_files[case_num][ext] = os.path.join(test_cases_dir, filename)
     
-    #match pairs by case number and extension
+    # Match pairs by case number and extension
     for case_num in sorted(set(old_files.keys()) & set(new_files.keys())):
-        #try to match by extension
+        # Try to match by extension
         for ext in old_files[case_num]:
             if ext in new_files[case_num]:
                 test_cases[case_num] = (
@@ -56,7 +60,7 @@ def find_all_test_cases(test_cases_dir):
 
 
 def run_test_case(old_path, new_path):
-    """run a single test case and return the diff result."""
+    """Run a single test case and return the diff result"""
     try:
         from src.diff.preprocessing import preprocess_file
         from src.diff.diff_hybrid import get_diff_hybrid
@@ -69,31 +73,31 @@ def run_test_case(old_path, new_path):
         
         result = get_diff_hybrid(old, new)
         
-        #verify we got a valid diff result
+        # Verify we got a valid diff result
         assert len(result) > 0, "Should have diff result"
         assert any(":" in r or "~" in r or "+" in r or "-" in r for r in result), "Should have changes"
         
         return result
     except FileNotFoundError as e:
-        print(f"✗ Test case file not found: {e}")
+        print(f"Test case file not found: {e}")
         return None
     except Exception as e:
-        print(f"✗ Error processing test case: {e}")
+        print(f"Error processing test case: {e}")
         return None
 
 
 def main():
-    """run tests using test case files."""
+    """Run tests using test case files"""
     try:
         print("=" * 60)
-        print("LHDiff Test Suite - All Test Case Files")
+        print("LHDiff Test Suite (All Test Case Files)")
         print("=" * 60)
         
-        #get test cases directory
+        # Get test cases directory
         test_dir = os.path.dirname(os.path.abspath(__file__))
         test_cases_dir = os.path.join(test_dir, 'test_cases')
         
-        #find all test case pairs
+        # Find all test case pairs
         test_cases = find_all_test_cases(test_cases_dir)
         
         if not test_cases:
@@ -103,13 +107,13 @@ def main():
         print(f"Found {len(test_cases)} test case pairs")
         print("=" * 60)
         
-        #prepare output
+        # Prepare output
         output_lines = []
         results = {}
         success_count = 0
         fail_count = 0
         
-        #write header explaining diff format
+        # Write header explaining diff format
         output_lines.append("x:y = exact match (line x in old matches line y in new)")
         output_lines.append("")
         output_lines.append("x~y = similarity match (line x in old is similar to line y in new)")
@@ -120,7 +124,7 @@ def main():
         output_lines.append("")
         output_lines.append("")
         
-        #run all test cases
+        #Run all test cases
         for case_num in sorted(test_cases.keys()):
             old_path, new_path, ext = test_cases[case_num]
             print(f"Testing case {case_num} ({ext})...", end=" ")
@@ -139,7 +143,7 @@ def main():
                 print(f"✗")
                 fail_count += 1
         
-        #write to output.txt
+        # Write to output.txt
         output_path = os.path.join(os.path.dirname(__file__), '..', OUTPUT_FILE)
         output_path = os.path.abspath(output_path)
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -148,17 +152,17 @@ def main():
         print("\n" + "=" * 60)
         print("Test Summary")
         print("=" * 60)
-        print(f"✓ Passed: {success_count}")
-        print(f"✗ Failed: {fail_count}")
+        print(f"Passed: {success_count}")
+        print(f"Failed: {fail_count}")
         print(f"Total: {len(test_cases)} test cases")
-        print(f"\n✓ Results written to {OUTPUT_FILE}")
+        print(f"\n Results written to {OUTPUT_FILE}")
         print("=" * 60)
         
         if fail_count == 0:
-            print("🎉 All tests passed!")
+            print("All tests passed!")
             return 0
         else:
-            print("❌ Some tests failed")
+            print("Some tests failed")
             return 1
             
     except Exception as e:

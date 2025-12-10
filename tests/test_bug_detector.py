@@ -1,25 +1,25 @@
-"""test suite for bug_detector.py"""
+"""Test suite for bug_detector.py"""
 
 import sys
 import os
 import tempfile
 import unittest
 
-#add parent directory to path
+# Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.bug_tracking.bug_detector import BugDetector, parse_commit_messages
 
 
 class TestBugDetector(unittest.TestCase):
-    """test BugDetector class."""
+    """Test BugDetector class"""
     
     def setUp(self):
-        """set up test fixtures."""
+        """Set up test fixtures"""
         self.detector = BugDetector()
     
     def test_bug_fix_keywords(self):
-        """test detection of bug fix keywords."""
+        """Test detection of bug fix keywords"""
         bug_fix_messages = [
             "fix crash on login",
             "resolve bug in authentication",
@@ -41,7 +41,7 @@ class TestBugDetector(unittest.TestCase):
                 )
     
     def test_non_bug_fix_messages(self):
-        """Test that non-bug-fix messages are not detected."""
+        """Test that non-bug-fix messages are not detected"""
         non_bug_messages = [
             "add new feature",
             "implement ui layout",
@@ -62,7 +62,7 @@ class TestBugDetector(unittest.TestCase):
                 )
     
     def test_conventional_commit_prefixes(self):
-        """Test conventional commit format prefixes."""
+        """Test conventional commit format prefixes"""
         conventional_fixes = [
             "fix: resolve null pointer exception",
             "fix(auth): prevent memory leak",
@@ -81,7 +81,7 @@ class TestBugDetector(unittest.TestCase):
                 )
     
     def test_issue_numbers(self):
-        """Test detection of issue numbers."""
+        """Test detection of issue numbers"""
         issue_messages = [
             "fixes #123",
             "resolves #456",
@@ -98,26 +98,26 @@ class TestBugDetector(unittest.TestCase):
                 )
     
     def test_case_insensitive(self):
-        """test that detection is case-insensitive."""
+        """Test that detection is case-insensitive"""
         self.assertTrue(self.detector.is_bug_fix("FIX CRASH"))
         self.assertTrue(self.detector.is_bug_fix("Fix Bug"))
         self.assertTrue(self.detector.is_bug_fix("BUGFIX"))
         self.assertTrue(self.detector.is_bug_fix("HotFix"))
     
     def test_edge_cases(self):
-        """test edge cases."""
-        #empty message
+        """Test edge cases"""
+        # Empty message
         self.assertFalse(self.detector.is_bug_fix(""))
-        
-        #note: keyword-based detector will match "bug" in "bug tracking"
-        #more sophisticated detection would need context understanding
+
+        #Note: keyword-based detector will match "bug" in "bug tracking"
+        # More sophisticated detection would need context understanding
 
 
 class TestParseCommitMessages(unittest.TestCase):
-    """test parse_commit_messages function."""
+    """Test parse_commit_messages function"""
     
     def test_parse_single_file(self):
-        """test parsing commits for a single file."""
+        """Test parsing commits for a single file"""
         test_data = """auth:
 initial authentication module
 
@@ -144,7 +144,7 @@ create user model"""
             os.unlink(temp_path)
     
     def test_parse_all_files(self):
-        """Test parsing commits for all files."""
+        """Test parsing commits for all files"""
         test_data = """auth:
 initial auth
 
@@ -171,7 +171,7 @@ add validation"""
             os.unlink(temp_path)
     
     def test_parse_empty_file(self):
-        """Test parsing empty file."""
+        """Test parsing empty file"""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
             temp_path = f.name
         
@@ -182,7 +182,7 @@ add validation"""
             os.unlink(temp_path)
     
     def test_parse_malformed_entries(self):
-        """Test parsing with malformed entries."""
+        """Test parsing with malformed entries"""
         test_data = """auth:
 valid entry
 
@@ -199,19 +199,19 @@ another valid entry
         
         try:
             commits = parse_commit_messages(temp_path, "auth")
-            #should only parse valid entries
+            # Should only parse valid entries
             self.assertEqual(len(commits), 2)
         finally:
             os.unlink(temp_path)
     
     def test_parse_nonexistent_file(self):
-        """Test parsing nonexistent file."""
+        """Test parsing nonexistent file"""
         with self.assertRaises(FileNotFoundError):
             parse_commit_messages("nonexistent_file.txt", "auth")
 
 
 def run_all_tests():
-    """Run all bug detector tests."""
+    """Run all bug detector tests"""
     print("=" * 60)
     print("Running Bug Detector Tests")
     print("=" * 60)
@@ -227,15 +227,14 @@ def run_all_tests():
     
     print("=" * 60)
     if result.wasSuccessful():
-        print("✓ All bug detector tests passed!")
+        print("All bug detector tests passed")
         print("=" * 60)
         return True
     else:
-        print("✗ Some tests failed")
+        print("Some tests failed")
         print("=" * 60)
         return False
 
 
 if __name__ == "__main__":
     run_all_tests()
-
