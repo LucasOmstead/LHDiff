@@ -1,4 +1,4 @@
-# LHDiff
+# LHDiff: A Two-Pass Hybrid Diff Algorithm with Similarity Matching and Bug Backtracking
 
 A hybrid line-based diff tool that combines the Myers diff algorithm (exact matching) with similarity-based matching to compute differences between two files. The tool includes preprocessing capabilities to normalize source code before comparison, making it robust to whitespace, case, and comment differences.
 
