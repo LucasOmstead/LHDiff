@@ -232,7 +232,6 @@ The diff tool uses a **two-pass hybrid approach**:
 - **Preprocessing**: Add new normalization rules in `src/diff/preprocessing.py`
 - **Diff Algorithm**: The core Myers algorithm is in `src/diff/diff.py`, hybrid algorithm in `src/diff/diff_hybrid.py`
 - **Similarity Matching**: Matching logic is in `src/diff/matcher.py`
-- **Application**: Main CLI/application logic should go in `app.py`
 
 ### Testing New Features
 
